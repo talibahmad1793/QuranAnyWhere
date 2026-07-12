@@ -132,26 +132,114 @@ async function renderBook(bookSlug) {
   }
 }
 
-function renderPart(bookSlug, fileName) {
+// GitHub's raw file server sends PDFs as application/octet-stream with
+// X-Frame-Options: deny, so they can never be shown in an <iframe> - the
+// browser just downloads them. Instead we fetch the raw bytes ourselves
+// (allowed - GitHub raw sends Access-Control-Allow-Origin: *) and render
+// pages with PDF.js onto a canvas.
+async function renderPart(bookSlug, fileName) {
   app.innerHTML = "";
   const rawUrl = `${RAW_ROOT}/${bookSlug}/${encodeURIComponent(fileName)}`;
-  const wrap = el("div", { class: "container" }, [
-    el("p", { class: "crumb" }, [
-      el("a", { href: "#/" }, "Library"),
-      " / ",
-      el("a", { href: `#/book/${encodeURIComponent(bookSlug)}` }, titleFromSlug(bookSlug)),
-      ` / ${titleFromSlug(fileName)}`,
-    ]),
-    el("div", { class: "viewer-wrap" }, [
-      el("div", { class: "viewer-top" }, [
-        el("a", { href: `#/book/${encodeURIComponent(bookSlug)}` }, "\u2190 Back to parts"),
-        el("span", {}, titleFromSlug(fileName)),
-        el("a", { href: rawUrl, target: "_blank", rel: "noopener" }, "Open raw PDF \u2197"),
-      ]),
-      el("iframe", { class: "viewer-frame", src: rawUrl, title: fileName }),
-    ]),
+
+  const crumb = el("p", { class: "crumb" }, [
+    el("a", { href: "#/" }, "Library"),
+    " / ",
+    el("a", { href: `#/book/${encodeURIComponent(bookSlug)}` }, titleFromSlug(bookSlug)),
+    ` / ${titleFromSlug(fileName)}`,
   ]);
+
+  const topBar = el("div", { class: "viewer-top" }, [
+    el("a", { href: `#/book/${encodeURIComponent(bookSlug)}` }, "\u2190 Back to parts"),
+    el("span", { class: "viewer-part-label" }, titleFromSlug(fileName)),
+    el("span", { class: "viewer-page-counter", id: "pageCounter" }, ""),
+  ]);
+
+  const canvas = el("canvas", { class: "pdf-canvas", id: "pdfCanvas" });
+  const canvasWrap = el("div", { class: "pdf-canvas-wrap" }, [
+    el("button", { class: "page-nav-btn", id: "prevBtn", "aria-label": "Previous page" }, "\u2039"),
+    canvas,
+    el("button", { class: "page-nav-btn", id: "nextBtn", "aria-label": "Next page" }, "\u203a"),
+  ]);
+
+  const viewerWrap = el("div", { class: "viewer-wrap" }, [topBar, canvasWrap]);
+  const wrap = el("div", { class: "container" }, [crumb, viewerWrap]);
   app.appendChild(el("main", {}, wrap));
+
+  const pageCounter = document.getElementById("pageCounter");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  // Figure out this file's neighbors within the book, so paging past the
+  // first/last page of this PDF can hop into the previous/next part.
+  let siblingFiles = [fileName];
+  let fileIndex = 0;
+  try {
+    const items = await githubList(bookSlug);
+    siblingFiles = items.filter((i) => i.type === "file" && /\.pdf$/i.test(i.name)).sort(naturalSort).map((f) => f.name);
+    fileIndex = siblingFiles.indexOf(fileName);
+  } catch (e) {
+    // Non-fatal - we just won't be able to auto-advance between parts.
+  }
+
+  let pdfDoc = null;
+  let currentPage = 1;
+  let rendering = false;
+
+  async function renderPage(num) {
+    if (!pdfDoc || rendering) return;
+    rendering = true;
+    const page = await pdfDoc.getPage(num);
+    const containerWidth = Math.min(canvasWrap.clientWidth - 100, 760);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scale = containerWidth / baseViewport.width;
+    const viewport = page.getViewport({ scale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    currentPage = num;
+    pageCounter.textContent = `Page ${num} of ${pdfDoc.numPages}`;
+    rendering = false;
+  }
+
+  function goNext() {
+    if (!pdfDoc) return;
+    if (currentPage < pdfDoc.numPages) {
+      renderPage(currentPage + 1);
+    } else if (fileIndex >= 0 && fileIndex < siblingFiles.length - 1) {
+      window.location.hash = `#/book/${encodeURIComponent(bookSlug)}/part/${encodeURIComponent(siblingFiles[fileIndex + 1])}`;
+    }
+  }
+
+  function goPrev() {
+    if (!pdfDoc) return;
+    if (currentPage > 1) {
+      renderPage(currentPage - 1);
+    } else if (fileIndex > 0) {
+      window.location.hash = `#/book/${encodeURIComponent(bookSlug)}/part/${encodeURIComponent(siblingFiles[fileIndex - 1])}`;
+    }
+  }
+
+  prevBtn.addEventListener("click", goPrev);
+  nextBtn.addEventListener("click", goNext);
+
+  function onKey(e) {
+    if (e.key === "ArrowRight") goNext();
+    if (e.key === "ArrowLeft") goPrev();
+  }
+  window.addEventListener("keydown", onKey);
+
+  pageCounter.textContent = "Loading\u2026";
+  try {
+    const loadingTask = pdfjsLib.getDocument(rawUrl);
+    pdfDoc = await loadingTask.promise;
+    await renderPage(1);
+  } catch (e) {
+    pageCounter.textContent = "";
+    canvasWrap.appendChild(el("p", { class: "state-msg error" }, `Couldn't load this PDF: ${e.message}`));
+  }
 }
 
 function route() {
