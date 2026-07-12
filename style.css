@@ -147,31 +147,51 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 .viewer-page-counter { opacity: 0.7; }
 
 .pdf-canvas-wrap {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 12px;
-  min-height: 60vh;
+  padding: 0 8px;
+  min-height: 50vh;
 }
 .pdf-canvas {
   max-width: 100%;
+  height: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   border-radius: 4px;
   background: #fff;
 }
 .page-nav-btn {
-  flex: 0 0 auto;
-  background: rgba(237, 230, 211, 0.12);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  background: rgba(237, 230, 211, 0.18);
   color: #f1ead7;
   border: none;
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
   line-height: 1;
 }
-.page-nav-btn:hover { background: rgba(237, 230, 211, 0.22); }
+.page-nav-btn:hover { background: rgba(237, 230, 211, 0.3); }
+.page-nav-btn--prev { left: 6px; }
+.page-nav-btn--next { right: 6px; }
+
+@media (max-width: 640px) {
+  .hero { padding: 40px 16px 32px; }
+  .hero .eyebrow { font-size: 15px; margin-bottom: 10px; }
+  .hero p { font-size: 16px; }
+  main { padding: 20px 12px 48px; }
+  .container { padding: 0 12px; }
+  .viewer-top { padding: 10px 12px; flex-wrap: wrap; gap: 6px; font-size: 13px; }
+  .viewer-part-label { font-size: 15px; order: 1; width: 100%; text-align: center; }
+  .pdf-canvas-wrap { padding: 0 4px; min-height: 40vh; }
+  .page-nav-btn { width: 34px; height: 34px; font-size: 18px; }
+  .page-nav-btn--prev { left: 2px; }
+  .page-nav-btn--next { right: 2px; }
+}
 
 .state-msg { padding: 40px 0; opacity: 0.75; }
 .state-msg.error { color: #a33; }

@@ -156,9 +156,9 @@ async function renderPart(bookSlug, fileName) {
 
   const canvas = el("canvas", { class: "pdf-canvas", id: "pdfCanvas" });
   const canvasWrap = el("div", { class: "pdf-canvas-wrap" }, [
-    el("button", { class: "page-nav-btn", id: "prevBtn", "aria-label": "Previous page" }, "\u2039"),
+    el("button", { class: "page-nav-btn page-nav-btn--prev", id: "prevBtn", "aria-label": "Previous page" }, "\u2039"),
     canvas,
-    el("button", { class: "page-nav-btn", id: "nextBtn", "aria-label": "Next page" }, "\u203a"),
+    el("button", { class: "page-nav-btn page-nav-btn--next", id: "nextBtn", "aria-label": "Next page" }, "\u203a"),
   ]);
 
   const viewerWrap = el("div", { class: "viewer-wrap" }, [topBar, canvasWrap]);
@@ -189,14 +189,27 @@ async function renderPart(bookSlug, fileName) {
     if (!pdfDoc || rendering) return;
     rendering = true;
     const page = await pdfDoc.getPage(num);
-    const containerWidth = Math.min(canvasWrap.clientWidth - 100, 760);
+
+    // Use nearly the full wrap width now that the nav buttons overlay
+    // instead of taking up horizontal space.
+    const isNarrow = window.innerWidth < 640;
+    const sidePadding = isNarrow ? 16 : 48;
+    const containerWidth = Math.min(canvasWrap.clientWidth - sidePadding, 900);
     const baseViewport = page.getViewport({ scale: 1 });
     const scale = containerWidth / baseViewport.width;
     const viewport = page.getViewport({ scale });
 
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    // Render at device pixel ratio so the text is crisp when a phone's
+    // screen (or pinch-zoom) has a higher effective resolution than
+    // plain CSS pixels.
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(viewport.width * dpr);
+    canvas.height = Math.floor(viewport.height * dpr);
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
+
     const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     await page.render({ canvasContext: ctx, viewport }).promise;
 
     currentPage = num;
@@ -230,6 +243,13 @@ async function renderPart(bookSlug, fileName) {
     if (e.key === "ArrowLeft") goPrev();
   }
   window.addEventListener("keydown", onKey);
+
+  let resizeTimer;
+  function onResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => renderPage(currentPage), 200);
+  }
+  window.addEventListener("resize", onResize);
 
   pageCounter.textContent = "Loading\u2026";
   try {
