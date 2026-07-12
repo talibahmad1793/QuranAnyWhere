@@ -11,7 +11,7 @@ const PROGRESS_PREFIX = "qaw:progress:";
 //  - Roman Urdu translation by Abul Ala Maududi (source: quranromanurdu.com)
 const QTEXT_ROOT = "https://raw.githubusercontent.com/fawazahmed0/quran-api/1/editions";
 const QTEXT_EDITIONS = {
-  arabic: "ara-quranuthmanihaf1",
+  arabic: "ara-quranuthmanihaf",
   transliteration: "ara-quran-la",
   urdu: "urd-abulaalamaududi-la",
 };
