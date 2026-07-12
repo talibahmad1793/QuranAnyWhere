@@ -280,10 +280,20 @@ async function renderPart(bookSlug, fileName, startPage) {
     // desktop, so this doesn't need to change per device.
     const availableWidth = canvasWrap.clientWidth - 24;
     const desktopCap = 820; // comfortable single-page reading width
-    const containerWidth = Math.max(240, Math.min(availableWidth, desktopCap));
 
     const baseViewport = page.getViewport({ scale: 1 });
-    const fitScale = containerWidth / baseViewport.width;
+
+    // Fit height too, so the whole page is visible without scrolling -
+    // measure how much vertical space is actually left below the canvas
+    // wrap's top position (i.e. below the header/breadcrumb/top bar).
+    const topOffset = canvasWrap.getBoundingClientRect().top;
+    const hintHeight = hint.offsetHeight || 24;
+    const bottomMargin = 24;
+    const availableHeight = window.innerHeight - topOffset - hintHeight - bottomMargin;
+
+    const widthScale = Math.min(availableWidth, desktopCap) / baseViewport.width;
+    const heightScale = Math.max(240, availableHeight) / baseViewport.height;
+    const fitScale = Math.min(widthScale, heightScale);
     const scale = zoomed ? fitScale * 1.9 : fitScale;
     const viewport = page.getViewport({ scale });
 
