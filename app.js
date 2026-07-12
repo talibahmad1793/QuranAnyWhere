@@ -1,6 +1,7 @@
 const cfg = window.SITE_CONFIG;
 const API_ROOT = `https://api.github.com/repos/${cfg.githubOwner}/${cfg.githubRepo}/contents`;
 const RAW_ROOT = `https://raw.githubusercontent.com/${cfg.githubOwner}/${cfg.githubRepo}/${cfg.githubBranch}`;
+const PROGRESS_PREFIX = "qaw:progress:";
 
 const app = document.getElementById("app");
 
@@ -43,11 +44,34 @@ function el(tag, attrs = {}, children = []) {
 }
 
 function renderLoading(target) {
-  target.appendChild(el("p", { class: "state-msg" }, "Loading\u2026"));
+  target.appendChild(el("div", { class: "spinner" }));
 }
 
 function renderError(target, message) {
   target.appendChild(el("p", { class: "state-msg error" }, message));
+}
+
+// --- Reading progress (kept in the visitor's own browser only) ---
+function getProgress(bookSlug) {
+  try {
+    const raw = localStorage.getItem(PROGRESS_PREFIX + bookSlug);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setProgress(bookSlug, file, page) {
+  try {
+    localStorage.setItem(PROGRESS_PREFIX + bookSlug, JSON.stringify({ file, page, updatedAt: Date.now() }));
+  } catch (e) {
+    // Storage may be unavailable (private browsing etc) - fine to skip.
+  }
+}
+
+function partHref(bookSlug, fileName, page) {
+  const base = `#/book/${encodeURIComponent(bookSlug)}/part/${encodeURIComponent(fileName)}`;
+  return page && page > 1 ? `${base}/page/${page}` : base;
 }
 
 async function renderHome() {
@@ -79,14 +103,21 @@ async function renderHome() {
 
     const grid = el("div", { class: "grid" });
     folders.forEach((folder) => {
-      const card = el("a", { class: "card", href: `#/book/${encodeURIComponent(folder.name)}` }, [
-        el("div", { class: "card-spine" }),
-        el("div", { class: "card-body" }, [
-          el("span", { class: "card-kicker" }, "Book"),
-          el("h2", { class: "card-title" }, titleFromSlug(folder.name)),
-          el("p", { class: "card-desc" }, "Tap to view parts"),
-        ]),
-      ]);
+      const progress = getProgress(folder.name);
+      const body = [
+        el("span", { class: "card-kicker" }, "Book"),
+        el("h2", { class: "card-title" }, titleFromSlug(folder.name)),
+      ];
+      if (progress) {
+        body.push(el("p", { class: "card-desc card-continue" }, `Continue \u2014 ${titleFromSlug(progress.file)}, page ${progress.page}`));
+      } else {
+        body.push(el("p", { class: "card-desc" }, "Tap to view parts"));
+      }
+      const card = el(
+        "a",
+        { class: "card", href: progress ? partHref(folder.name, progress.file, progress.page) : `#/book/${encodeURIComponent(folder.name)}` },
+        [el("div", { class: "card-spine" }), el("div", { class: "card-body" }, body)]
+      );
       grid.appendChild(card);
     });
     main.appendChild(grid);
@@ -102,6 +133,17 @@ async function renderBook(bookSlug) {
   app.appendChild(main);
   main.appendChild(el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), ` / ${titleFromSlug(bookSlug)}`]));
   main.appendChild(el("h1", { class: "page-title" }, titleFromSlug(bookSlug)));
+
+  const progress = getProgress(bookSlug);
+  if (progress) {
+    main.appendChild(
+      el("a", { class: "continue-banner", href: partHref(bookSlug, progress.file, progress.page) }, [
+        el("span", {}, "\u25b6 Continue reading"),
+        el("span", { class: "continue-banner-detail" }, `${titleFromSlug(progress.file)} \u2014 page ${progress.page}`),
+      ])
+    );
+  }
+
   const listWrap = el("div");
   main.appendChild(listWrap);
   renderLoading(listWrap);
@@ -118,11 +160,10 @@ async function renderBook(bookSlug) {
 
     const grid = el("div", { class: "part-grid" });
     files.forEach((file, i) => {
-      const tile = el(
-        "a",
-        { class: "tile", href: `#/book/${encodeURIComponent(bookSlug)}/part/${encodeURIComponent(file.name)}` },
-        [el("span", { class: "tile-num" }, String(i + 1)), el("span", { class: "tile-label" }, titleFromSlug(file.name))]
-      );
+      const tile = el("a", { class: "tile", href: partHref(bookSlug, file.name) }, [
+        el("span", { class: "tile-num" }, String(i + 1)),
+        el("span", { class: "tile-label" }, titleFromSlug(file.name)),
+      ]);
       grid.appendChild(tile);
     });
     listWrap.appendChild(grid);
@@ -137,7 +178,7 @@ async function renderBook(bookSlug) {
 // browser just downloads them. Instead we fetch the raw bytes ourselves
 // (allowed - GitHub raw sends Access-Control-Allow-Origin: *) and render
 // pages with PDF.js onto a canvas.
-async function renderPart(bookSlug, fileName) {
+async function renderPart(bookSlug, fileName, startPage) {
   app.innerHTML = "";
   const rawUrl = `${RAW_ROOT}/${bookSlug}/${encodeURIComponent(fileName)}`;
 
@@ -155,13 +196,15 @@ async function renderPart(bookSlug, fileName) {
   ]);
 
   const canvas = el("canvas", { class: "pdf-canvas", id: "pdfCanvas" });
+  const canvasScroll = el("div", { class: "pdf-canvas-scroll", id: "canvasScroll" }, [canvas]);
   const canvasWrap = el("div", { class: "pdf-canvas-wrap" }, [
     el("button", { class: "page-nav-btn page-nav-btn--prev", id: "prevBtn", "aria-label": "Previous page" }, "\u2039"),
-    canvas,
+    canvasScroll,
     el("button", { class: "page-nav-btn page-nav-btn--next", id: "nextBtn", "aria-label": "Next page" }, "\u203a"),
   ]);
+  const hint = el("p", { class: "viewer-hint" }, "Swipe to turn pages \u00b7 double-tap to zoom");
 
-  const viewerWrap = el("div", { class: "viewer-wrap" }, [topBar, canvasWrap]);
+  const viewerWrap = el("div", { class: "viewer-wrap" }, [topBar, canvasWrap, hint]);
   const wrap = el("div", { class: "container" }, [crumb, viewerWrap]);
   app.appendChild(el("main", {}, wrap));
 
@@ -184,24 +227,22 @@ async function renderPart(bookSlug, fileName) {
   let pdfDoc = null;
   let currentPage = 1;
   let rendering = false;
+  let zoomed = false;
 
   async function renderPage(num) {
     if (!pdfDoc || rendering) return;
     rendering = true;
     const page = await pdfDoc.getPage(num);
 
-    // Use nearly the full wrap width now that the nav buttons overlay
-    // instead of taking up horizontal space.
     const isNarrow = window.innerWidth < 640;
     const sidePadding = isNarrow ? 16 : 48;
     const containerWidth = Math.min(canvasWrap.clientWidth - sidePadding, 900);
     const baseViewport = page.getViewport({ scale: 1 });
-    const scale = containerWidth / baseViewport.width;
+    const fitScale = containerWidth / baseViewport.width;
+    const scale = zoomed ? fitScale * 1.9 : fitScale;
     const viewport = page.getViewport({ scale });
 
-    // Render at device pixel ratio so the text is crisp when a phone's
-    // screen (or pinch-zoom) has a higher effective resolution than
-    // plain CSS pixels.
+    // Render at device pixel ratio so text stays crisp on phone screens.
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.floor(viewport.width * dpr);
     canvas.height = Math.floor(viewport.height * dpr);
@@ -214,7 +255,16 @@ async function renderPart(bookSlug, fileName) {
 
     currentPage = num;
     pageCounter.textContent = `Page ${num} of ${pdfDoc.numPages}`;
+    setProgress(bookSlug, fileName, num);
     rendering = false;
+  }
+
+  function setZoom(nextZoomed) {
+    zoomed = nextZoomed;
+    canvasScroll.classList.toggle("zoomed", zoomed);
+    canvasScroll.scrollLeft = 0;
+    canvasScroll.scrollTop = 0;
+    renderPage(currentPage);
   }
 
   function goNext() {
@@ -222,7 +272,7 @@ async function renderPart(bookSlug, fileName) {
     if (currentPage < pdfDoc.numPages) {
       renderPage(currentPage + 1);
     } else if (fileIndex >= 0 && fileIndex < siblingFiles.length - 1) {
-      window.location.hash = `#/book/${encodeURIComponent(bookSlug)}/part/${encodeURIComponent(siblingFiles[fileIndex + 1])}`;
+      window.location.hash = partHref(bookSlug, siblingFiles[fileIndex + 1]);
     }
   }
 
@@ -231,7 +281,7 @@ async function renderPart(bookSlug, fileName) {
     if (currentPage > 1) {
       renderPage(currentPage - 1);
     } else if (fileIndex > 0) {
-      window.location.hash = `#/book/${encodeURIComponent(bookSlug)}/part/${encodeURIComponent(siblingFiles[fileIndex - 1])}`;
+      window.location.hash = partHref(bookSlug, siblingFiles[fileIndex - 1]);
     }
   }
 
@@ -251,11 +301,46 @@ async function renderPart(bookSlug, fileName) {
   }
   window.addEventListener("resize", onResize);
 
+  // Swipe to turn pages (only while not zoomed in - while zoomed, a swipe
+  // pans around the enlarged page instead).
+  let touchStartX = 0;
+  let touchStartY = 0;
+  canvasScroll.addEventListener(
+    "touchstart",
+    (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    },
+    { passive: true }
+  );
+  canvasScroll.addEventListener(
+    "touchend",
+    (e) => {
+      if (zoomed) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) goNext();
+        else goPrev();
+      }
+    },
+    { passive: true }
+  );
+
+  // Double-tap / double-click to toggle zoom.
+  let lastTap = 0;
+  canvasScroll.addEventListener("click", () => {
+    const now = Date.now();
+    if (now - lastTap < 350) setZoom(!zoomed);
+    lastTap = now;
+  });
+
   pageCounter.textContent = "Loading\u2026";
   try {
     const loadingTask = pdfjsLib.getDocument(rawUrl);
     pdfDoc = await loadingTask.promise;
-    await renderPage(1);
+    const first = Math.max(1, Math.min(startPage || 1, pdfDoc.numPages));
+    await renderPage(first);
   } catch (e) {
     pageCounter.textContent = "";
     canvasWrap.appendChild(el("p", { class: "state-msg error" }, `Couldn't load this PDF: ${e.message}`));
@@ -267,7 +352,8 @@ function route() {
   const parts = hash.split("/").filter(Boolean);
 
   if (parts[0] === "book" && parts[1] && parts[2] === "part" && parts[3]) {
-    renderPart(decodeURIComponent(parts[1]), decodeURIComponent(parts[3]));
+    const startPage = parts[4] === "page" && parts[5] ? parseInt(parts[5], 10) : 1;
+    renderPart(decodeURIComponent(parts[1]), decodeURIComponent(parts[3]), startPage);
   } else if (parts[0] === "book" && parts[1]) {
     renderBook(decodeURIComponent(parts[1]));
   } else {
