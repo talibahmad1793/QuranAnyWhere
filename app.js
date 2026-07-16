@@ -147,7 +147,7 @@ async function renderHome() {
 
   try {
     const items = await githubList("");
-    const RESERVED_FOLDERS = ["duas"]; // reserved for JSON-backed typed collections, not PDF folders
+    const RESERVED_FOLDERS = ["duas", "search-index"]; // reserved for JSON data, not PDF folders
     const folders = items.filter((i) => i.type === "dir" && !RESERVED_FOLDERS.includes(i.name)).sort(naturalSort);
     main.innerHTML = "";
 
