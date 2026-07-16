@@ -531,7 +531,7 @@ async function renderQuranText(juzNumber, scrollTarget) {
   }
 }
 
-async function renderDuas() {
+async function renderDuas(scrollTarget) {
   app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Daily Dua & Dhikr"]);
   const heading = el("div", {}, [
@@ -545,25 +545,83 @@ async function renderDuas() {
   const wrap = el("div", { class: "container text-container" }, [crumb, heading, versesWrap]);
   app.appendChild(el("main", {}, wrap));
 
+  function duaUrl(i) {
+    return `${window.location.origin}${window.location.pathname}#/duas/${i}`;
+  }
+
+  function duaShareText(d, i) {
+    return [d.title, "", d.arabic, "", d.transliteration, "", `\u201c${d.translation}\u201d`, "", d.reference, duaUrl(i)].join("\n");
+  }
+
   try {
     const res = await fetch(`${RAW_ROOT}/${DUAS_JSON_PATH}`);
     if (!res.ok) throw new Error(`Couldn't load duas.json (${res.status})`);
     const duas = await res.json();
 
     versesWrap.innerHTML = "";
-    duas.forEach((d) => {
-      const card = el("div", { class: "dua-card" }, [
+    duas.forEach((d, i) => {
+      const copyBtn = el("button", { class: "share-link", type: "button" }, "Copy");
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(duaShareText(d, i));
+          copyBtn.textContent = "Copied!";
+        } catch (err) {
+          copyBtn.textContent = "Couldn't copy";
+        }
+        setTimeout(() => (copyBtn.textContent = "Copy"), 1800);
+      });
+
+      const socialTargets = [
+        { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(duaShareText(d, i))}` },
+        { label: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(duaUrl(i))}&text=${encodeURIComponent(d.title)}` },
+        { label: "Twitter/X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(d.title)}&url=${encodeURIComponent(duaUrl(i))}` },
+        { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(duaUrl(i))}` },
+      ];
+      const social = el(
+        "div",
+        { class: "social-row" },
+        socialTargets.map((t) => el("a", { class: "social-link", href: t.href, target: "_blank", rel: "noopener noreferrer" }, t.label))
+      );
+      social.style.display = "none";
+
+      const shareBtn = el("button", { class: "share-link", type: "button" }, "Share");
+      shareBtn.addEventListener("click", async () => {
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: d.title, text: duaShareText(d, i), url: duaUrl(i) });
+          } catch (err) {
+            // Cancelled or failed silently - nothing to do.
+          }
+        } else {
+          social.style.display = social.style.display === "none" ? "flex" : "none";
+        }
+      });
+
+      const shareRow = el("div", { class: "share-row" }, [shareBtn, el("span", { class: "share-sep" }, "|"), copyBtn]);
+
+      const card = el("div", { class: "dua-card", id: `dua-${i}` }, [
         el("h3", { class: "dua-title" }, d.title),
         el("div", { class: "verse-arabic dua-arabic" }, d.arabic),
         el("p", { class: "verse-translit" }, d.transliteration),
         el("p", { class: "verse-urdu dua-translation" }, `\u201c${d.translation}\u201d`),
         el("p", { class: "dua-reference" }, d.reference),
+        shareRow,
+        social,
       ]);
       if (d.note) {
         card.appendChild(el("p", { class: "dua-note" }, `\u2139 ${d.note}`));
       }
       versesWrap.appendChild(card);
     });
+
+    if (scrollTarget !== undefined && scrollTarget !== null) {
+      const target = document.getElementById(`dua-${scrollTarget}`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("search-highlight");
+        setTimeout(() => target.classList.remove("search-highlight"), 2500);
+      }
+    }
   } catch (e) {
     versesWrap.innerHTML = "";
     renderError(versesWrap, e.message);
@@ -906,7 +964,7 @@ function route() {
   } else if (parts[0] === "hadith") {
     renderHadithBooks();
   } else if (parts[0] === "duas") {
-    renderDuas();
+    renderDuas(parts[1] !== undefined ? parseInt(parts[1], 10) : null);
   } else if (parts[0] === "quran-text" && parts[1] && parts[2] === "v" && parts[3] && parts[4]) {
     renderQuranText(parseInt(parts[1], 10) || 1, { s: parseInt(parts[3], 10), a: parseInt(parts[4], 10) });
   } else if (parts[0] === "quran-text" && parts[1]) {
