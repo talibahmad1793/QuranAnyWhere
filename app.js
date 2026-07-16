@@ -3,13 +3,14 @@ const API_ROOT = `https://api.github.com/repos/${cfg.githubOwner}/${cfg.githubRe
 const RAW_ROOT = `https://raw.githubusercontent.com/${cfg.githubOwner}/${cfg.githubRepo}/${cfg.githubBranch}`;
 const PROGRESS_PREFIX = "qaw:progress:";
 
-// Verified, structured Quran text data (not OCR) from the open-source
-// fawazahmed0/quran-api project, served via GitHub raw (same trusted host
-// used for our own PDFs). Three editions combined per verse:
+// Verified, structured Quran text data (not OCR), originally from the
+// open-source fawazahmed0/quran-api project - served from your own fork
+// so this site has no dependency on the original repo staying online.
+// Three editions combined per verse:
 //  - Arabic Uthmani text (source: tanzil.net, the standard reference text)
 //  - Roman transliteration of the Arabic recitation (source: tanzil.net)
 //  - Roman Urdu translation by Abul Ala Maududi (source: quranromanurdu.com)
-const QTEXT_ROOT = "https://raw.githubusercontent.com/fawazahmed0/quran-api/1/editions";
+const QTEXT_ROOT = "https://raw.githubusercontent.com/talibahmad1793/quran-api/1/editions";
 const QTEXT_EDITIONS = {
   arabic: "ara-quranuthmanihaf",
   transliteration: "ara-quran-la",
@@ -18,12 +19,13 @@ const QTEXT_EDITIONS = {
 const QURAN_TEXT_BOOK_SLUG = "quran-roman-urdu-hindi";
 const DUAS_JSON_PATH = "duas/duas.json";
 
-// Verified hadith data (Arabic + English), same trusted source/host
-// pattern as the Qur'an text above. Numbering matches sunnah.com: each
-// hadith's overall number is its standard citation (e.g. "Sahih al-Bukhari
-// 1"), and reference.book/reference.hadith give the traditional in-book
-// chapter and position sunnah.com also shows.
-const HADITH_ROOT = "https://raw.githubusercontent.com/fawazahmed0/hadith-api/1/editions";
+// Verified hadith data (Arabic + English), originally from fawazahmed0/
+// hadith-api - served from your own fork, same reasoning as above.
+// Numbering matches sunnah.com: each hadith's overall number is its
+// standard citation (e.g. "Sahih al-Bukhari 1"), and reference.book/
+// reference.hadith give the traditional in-book chapter and position
+// sunnah.com also shows.
+const HADITH_ROOT = "https://raw.githubusercontent.com/talibahmad1793/hadith-api/1/editions";
 const HADITH_BOOKS = [
   { slug: "bukhari", name: "Sahih al-Bukhari", ar: "ara-bukhari", en: "eng-bukhari" },
   { slug: "muslim", name: "Sahih Muslim", ar: "ara-muslim", en: "eng-muslim" },
@@ -745,11 +747,12 @@ async function loadSearchIndex() {
 }
 
 function snippetAround(text, query, radius) {
-  const lower = text.toLowerCase();
-  const idx = lower.indexOf(query.toLowerCase());
-  if (idx === -1) return text.slice(0, radius * 2);
+  const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`\\b${escaped}\\b`, "i").exec(text);
+  if (!match) return text.slice(0, radius * 2);
+  const idx = match.index;
   const start = Math.max(0, idx - radius);
-  const end = Math.min(text.length, idx + query.length + radius);
+  const end = Math.min(text.length, idx + match[0].length + radius);
   return (start > 0 ? "\u2026" : "") + text.slice(start, end) + (end < text.length ? "\u2026" : "");
 }
 
@@ -781,10 +784,14 @@ async function renderSearch(query) {
 
   try {
     const { quran, hadith } = await loadSearchIndex();
-    const q = query.toLowerCase();
 
-    const quranMatches = quran.filter((v) => v.t.toLowerCase().includes(q) || v.u.toLowerCase().includes(q)).slice(0, 40);
-    const hadithMatches = hadith.filter((h) => h.e.toLowerCase().includes(q)).slice(0, 40);
+    // Whole-word/phrase matching, not raw substring - otherwise "ali" would
+    // match inside "maalik" or "Alif", which is what users actually hit.
+    const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const wordRegex = new RegExp(`\\b${escaped}\\b`, "i");
+
+    const quranMatches = quran.filter((v) => wordRegex.test(v.t) || wordRegex.test(v.u)).slice(0, 40);
+    const hadithMatches = hadith.filter((h) => wordRegex.test(h.e)).slice(0, 40);
 
     resultsWrap.innerHTML = "";
     resultsWrap.appendChild(
@@ -794,7 +801,7 @@ async function renderSearch(query) {
     if (quranMatches.length > 0) {
       resultsWrap.appendChild(el("h2", { class: "search-section-title" }, "Qur'an"));
       quranMatches.forEach((v) => {
-        const matchedUrdu = v.u.toLowerCase().includes(q);
+        const matchedUrdu = wordRegex.test(v.u);
         const snippet = snippetAround(matchedUrdu ? v.u : v.t, query, 60);
         resultsWrap.appendChild(
           el("a", { class: "search-result", href: `#/quran-text/${v.j}/v/${v.s}/${v.a}` }, [
