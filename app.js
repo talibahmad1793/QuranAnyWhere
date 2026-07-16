@@ -18,6 +18,22 @@ const QTEXT_EDITIONS = {
 const QURAN_TEXT_BOOK_SLUG = "quran-roman-urdu-hindi";
 const DUAS_JSON_PATH = "duas/duas.json";
 
+// Verified hadith data (Arabic + English), same trusted source/host
+// pattern as the Qur'an text above. Numbering matches sunnah.com: each
+// hadith's overall number is its standard citation (e.g. "Sahih al-Bukhari
+// 1"), and reference.book/reference.hadith give the traditional in-book
+// chapter and position sunnah.com also shows.
+const HADITH_ROOT = "https://raw.githubusercontent.com/fawazahmed0/hadith-api/1/editions";
+const HADITH_BOOKS = [
+  { slug: "bukhari", name: "Sahih al-Bukhari", ar: "ara-bukhari", en: "eng-bukhari" },
+  { slug: "muslim", name: "Sahih Muslim", ar: "ara-muslim", en: "eng-muslim" },
+  { slug: "abudawud", name: "Sunan Abi Dawud", ar: "ara-abudawud", en: "eng-abudawud" },
+  { slug: "tirmidhi", name: "Jami' at-Tirmidhi", ar: "ara-tirmidhi", en: "eng-tirmidhi" },
+  { slug: "nasai", name: "Sunan an-Nasa'i", ar: "ara-nasai", en: "eng-nasai" },
+  { slug: "ibnmajah", name: "Sunan Ibn Majah", ar: "ara-ibnmajah", en: "eng-ibnmajah" },
+];
+const hadithBookCache = {}; // slug -> { sections, hadithsByBook: {bookNum: [{ar,en}]} }
+
 const SURAH_NAMES = [
   null, "Al-Fatihah", "Al-Baqarah", "Aal-e-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf",
   "Al-Anfal", "At-Tawbah", "Yunus", "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl",
@@ -163,6 +179,17 @@ async function renderHome() {
           el("span", { class: "card-kicker" }, "Typed text"),
           el("h2", { class: "card-title" }, "Daily Dua & Dhikr"),
           el("p", { class: "card-desc" }, "Essential duas for every moment of your day"),
+        ]),
+      ])
+    );
+
+    grid.appendChild(
+      el("a", { class: "card", href: "#/hadith" }, [
+        el("div", { class: "card-spine" }),
+        el("div", { class: "card-body" }, [
+          el("span", { class: "card-kicker" }, "Typed text"),
+          el("h2", { class: "card-title" }, "Hadith Collections"),
+          el("p", { class: "card-desc" }, "Sahih al-Bukhari, Sahih Muslim & 4 more \u2014 Arabic & English"),
         ]),
       ])
     );
@@ -536,11 +563,161 @@ async function renderDuas() {
   }
 }
 
+async function loadHadithBook(bookSlug) {
+  if (hadithBookCache[bookSlug]) return hadithBookCache[bookSlug];
+  const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
+  if (!book) throw new Error("Unknown hadith book");
+
+  const [arRes, enRes] = await Promise.all([
+    fetch(`${HADITH_ROOT}/${book.ar}.json`),
+    fetch(`${HADITH_ROOT}/${book.en}.json`),
+  ]);
+  if (!arRes.ok || !enRes.ok) throw new Error("Couldn't load hadith data");
+  const [arData, enData] = await Promise.all([arRes.json(), enRes.json()]);
+
+  const hadithsByBook = {};
+  for (let i = 0; i < arData.hadiths.length; i++) {
+    const a = arData.hadiths[i];
+    const e = enData.hadiths[i];
+    const bookNum = a.reference.book;
+    if (!hadithsByBook[bookNum]) hadithsByBook[bookNum] = [];
+    hadithsByBook[bookNum].push({
+      hadithnumber: a.hadithnumber,
+      inBookNumber: a.reference.hadith,
+      arabic: a.text,
+      english: e.text,
+    });
+  }
+
+  const result = { sections: arData.metadata.sections, hadithsByBook };
+  hadithBookCache[bookSlug] = result;
+  return result;
+}
+
+async function renderHadithBooks() {
+  app.innerHTML = "";
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Hadith Collections"]);
+  const heading = el("div", {}, [
+    el("h1", { class: "page-title" }, "Hadith Collections"),
+    el("p", { class: "duas-subtitle" }, "Arabic text with English translation, numbered as on sunnah.com"),
+  ]);
+  const grid = el("div", { class: "grid" });
+  HADITH_BOOKS.forEach((b) => {
+    grid.appendChild(
+      el("a", { class: "card", href: `#/hadith/${b.slug}` }, [
+        el("div", { class: "card-spine" }),
+        el("div", { class: "card-body" }, [
+          el("span", { class: "card-kicker" }, "Collection"),
+          el("h2", { class: "card-title" }, b.name),
+          el("p", { class: "card-desc" }, "Tap to browse chapters"),
+        ]),
+      ])
+    );
+  });
+  const wrap = el("div", { class: "container" }, [crumb, heading, grid]);
+  app.appendChild(el("main", {}, wrap));
+}
+
+async function renderHadithChapters(bookSlug) {
+  app.innerHTML = "";
+  const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
+  const crumb = el("p", { class: "crumb" }, [
+    el("a", { href: "#/" }, "Library"),
+    " / ",
+    el("a", { href: "#/hadith" }, "Hadith Collections"),
+    ` / ${book ? book.name : bookSlug}`,
+  ]);
+  const heading = el("h1", { class: "page-title" }, book ? book.name : bookSlug);
+  const listWrap = el("div");
+  renderLoading(listWrap);
+  const wrap = el("div", { class: "container" }, [crumb, heading, listWrap]);
+  app.appendChild(el("main", {}, wrap));
+
+  try {
+    const { sections } = await loadHadithBook(bookSlug);
+    listWrap.innerHTML = "";
+    const grid = el("div", { class: "grid" });
+    Object.keys(sections)
+      .map(Number)
+      .filter((n) => n > 0 && sections[n])
+      .sort((a, b) => a - b)
+      .forEach((n) => {
+        grid.appendChild(
+          el("a", { class: "card", href: `#/hadith/${bookSlug}/${n}` }, [
+            el("div", { class: "card-spine" }),
+            el("div", { class: "card-body" }, [
+              el("span", { class: "card-kicker" }, `Book ${n}`),
+              el("h2", { class: "card-title hadith-chapter-title" }, sections[n]),
+            ]),
+          ])
+        );
+      });
+    listWrap.appendChild(grid);
+  } catch (e) {
+    listWrap.innerHTML = "";
+    renderError(listWrap, e.message);
+  }
+}
+
+async function renderHadithList(bookSlug, sectionNum) {
+  app.innerHTML = "";
+  const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
+  const crumb = el("p", { class: "crumb" }, [
+    el("a", { href: "#/" }, "Library"),
+    " / ",
+    el("a", { href: "#/hadith" }, "Hadith Collections"),
+    " / ",
+    el("a", { href: `#/hadith/${bookSlug}` }, book ? book.name : bookSlug),
+    ` / Book ${sectionNum}`,
+  ]);
+  const headingWrap = el("div", {}, [el("h1", { class: "page-title" }, `Loading\u2026`)]);
+  const listWrap = el("div");
+  renderLoading(listWrap);
+  const wrap = el("div", { class: "container text-container" }, [crumb, headingWrap, listWrap]);
+  app.appendChild(el("main", {}, wrap));
+
+  try {
+    const { sections, hadithsByBook } = await loadHadithBook(bookSlug);
+    headingWrap.innerHTML = "";
+    headingWrap.appendChild(el("h1", { class: "page-title" }, sections[sectionNum] || `Book ${sectionNum}`));
+
+    const hadiths = hadithsByBook[sectionNum] || [];
+    listWrap.innerHTML = "";
+
+    if (hadiths.length === 0) {
+      listWrap.appendChild(el("p", { class: "state-msg" }, "No hadith found in this chapter."));
+      return;
+    }
+
+    hadiths.forEach((h) => {
+      const card = el("div", { class: "dua-card" }, [
+        el("div", { class: "verse-arabic dua-arabic" }, h.arabic),
+        el("p", { class: "verse-urdu dua-translation" }, h.english),
+        el(
+          "p",
+          { class: "dua-reference" },
+          `${book ? book.name : bookSlug} ${h.hadithnumber} \u00b7 Book ${sectionNum}, Hadith ${h.inBookNumber}`
+        ),
+      ]);
+      listWrap.appendChild(card);
+    });
+  } catch (e) {
+    listWrap.innerHTML = "";
+    renderError(listWrap, e.message);
+  }
+}
+
 function route() {
   const hash = window.location.hash.replace(/^#\/?/, "");
   const parts = hash.split("/").filter(Boolean);
 
-  if (parts[0] === "duas") {
+  if (parts[0] === "hadith" && parts[1] && parts[2]) {
+    renderHadithList(decodeURIComponent(parts[1]), parseInt(parts[2], 10));
+  } else if (parts[0] === "hadith" && parts[1]) {
+    renderHadithChapters(decodeURIComponent(parts[1]));
+  } else if (parts[0] === "hadith") {
+    renderHadithBooks();
+  } else if (parts[0] === "duas") {
     renderDuas();
   } else if (parts[0] === "quran-text" && parts[1]) {
     renderQuranText(parseInt(parts[1], 10) || 1);
