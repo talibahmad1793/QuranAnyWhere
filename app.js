@@ -689,7 +689,42 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
       return;
     }
 
+    function hadithUrl(hadithnumber) {
+      return `${window.location.origin}${window.location.pathname}#/hadith/${bookSlug}/${sectionNum}/h/${hadithnumber}`;
+    }
+
+    function hadithShareText(h) {
+      const bookName = book ? book.name : bookSlug;
+      const chapterName = sections[sectionNum] || "";
+      return [
+        h.arabic,
+        "",
+        h.english,
+        "",
+        `${bookName} ${h.hadithnumber}`,
+        `Book ${sectionNum}: ${chapterName}, Hadith ${h.inBookNumber}`,
+        hadithUrl(h.hadithnumber),
+      ].join("\n");
+    }
+
     hadiths.forEach((h) => {
+      const copyBtn = el("button", { class: "share-link", type: "button" }, "Copy");
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(hadithShareText(h));
+          copyBtn.textContent = "Copied!";
+        } catch (err) {
+          copyBtn.textContent = "Couldn't copy";
+        }
+        setTimeout(() => (copyBtn.textContent = "Copy"), 1800);
+      });
+
+      const shareRow = el("div", { class: "share-row" }, [
+        el("span", { class: "share-label" }, "Share"),
+        el("span", { class: "share-sep" }, "|"),
+        copyBtn,
+      ]);
+
       const card = el("div", { class: "dua-card", id: `h-${h.hadithnumber}` }, [
         el("div", { class: "verse-arabic dua-arabic" }, h.arabic),
         el("p", { class: "verse-urdu dua-translation" }, h.english),
@@ -698,6 +733,7 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
           { class: "dua-reference" },
           `${book ? book.name : bookSlug} ${h.hadithnumber} \u00b7 Book ${sectionNum}, Hadith ${h.inBookNumber}`
         ),
+        shareRow,
       ]);
       listWrap.appendChild(card);
     });
