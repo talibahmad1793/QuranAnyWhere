@@ -707,6 +707,23 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
       ].join("\n");
     }
 
+    function socialLinksRow(h) {
+      const bookName = book ? book.name : bookSlug;
+      const url = hadithUrl(h.hadithnumber);
+      const shortText = `${bookName} ${h.hadithnumber}`;
+      const targets = [
+        { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(hadithShareText(h))}` },
+        { label: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shortText)}` },
+        { label: "Twitter/X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText)}&url=${encodeURIComponent(url)}` },
+        { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+      ];
+      return el(
+        "div",
+        { class: "social-row" },
+        targets.map((t) => el("a", { class: "social-link", href: t.href, target: "_blank", rel: "noopener noreferrer" }, t.label))
+      );
+    }
+
     hadiths.forEach((h) => {
       const copyBtn = el("button", { class: "share-link", type: "button" }, "Copy");
       copyBtn.addEventListener("click", async () => {
@@ -719,11 +736,28 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
         setTimeout(() => (copyBtn.textContent = "Copy"), 1800);
       });
 
-      const shareRow = el("div", { class: "share-row" }, [
-        el("span", { class: "share-label" }, "Share"),
-        el("span", { class: "share-sep" }, "|"),
-        copyBtn,
-      ]);
+      const social = socialLinksRow(h);
+      social.style.display = "none";
+
+      const shareBtn = el("button", { class: "share-link", type: "button" }, "Share");
+      shareBtn.addEventListener("click", async () => {
+        const bookName = book ? book.name : bookSlug;
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: `${bookName} ${h.hadithnumber}`,
+              text: hadithShareText(h),
+              url: hadithUrl(h.hadithnumber),
+            });
+          } catch (err) {
+            // User cancelled the native share sheet, or it failed silently - no action needed.
+          }
+        } else {
+          social.style.display = social.style.display === "none" ? "flex" : "none";
+        }
+      });
+
+      const shareRow = el("div", { class: "share-row" }, [shareBtn, el("span", { class: "share-sep" }, "|"), copyBtn]);
 
       const card = el("div", { class: "dua-card", id: `h-${h.hadithnumber}` }, [
         el("div", { class: "verse-arabic dua-arabic" }, h.arabic),
@@ -734,6 +768,7 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
           `${book ? book.name : bookSlug} ${h.hadithnumber} \u00b7 Book ${sectionNum}, Hadith ${h.inBookNumber}`
         ),
         shareRow,
+        social,
       ]);
       listWrap.appendChild(card);
     });
