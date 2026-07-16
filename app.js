@@ -16,6 +16,7 @@ const QTEXT_EDITIONS = {
   urdu: "urd-abulaalamaududi-la",
 };
 const QURAN_TEXT_BOOK_SLUG = "quran-roman-urdu-hindi";
+const DUAS_JSON_PATH = "duas/duas.json";
 
 const SURAH_NAMES = [
   null, "Al-Fatihah", "Al-Baqarah", "Aal-e-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf",
@@ -128,9 +129,8 @@ async function renderHome() {
 
     if (folders.length === 0) {
       main.appendChild(
-        el("p", { class: "state-msg" }, "No books yet \u2014 push a folder of PDFs to your repo and refresh.")
+        el("p", { class: "state-msg" }, "No PDF books yet \u2014 push a folder of PDFs to your repo and refresh.")
       );
-      return;
     }
 
     const grid = el("div", { class: "grid" });
@@ -152,6 +152,20 @@ async function renderHome() {
       );
       grid.appendChild(card);
     });
+
+    // Typed (non-PDF) collections, sourced from JSON in this repo rather
+    // than a folder of files.
+    grid.appendChild(
+      el("a", { class: "card", href: "#/duas" }, [
+        el("div", { class: "card-spine" }),
+        el("div", { class: "card-body" }, [
+          el("span", { class: "card-kicker" }, "Typed text"),
+          el("h2", { class: "card-title" }, "Daily Dua & Dhikr"),
+          el("p", { class: "card-desc" }, "Essential duas for every moment of your day"),
+        ]),
+      ])
+    );
+
     main.appendChild(grid);
   } catch (e) {
     main.innerHTML = "";
@@ -488,11 +502,52 @@ async function renderQuranText(juzNumber) {
   }
 }
 
+async function renderDuas() {
+  app.innerHTML = "";
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Daily Dua & Dhikr"]);
+  const heading = el("div", {}, [
+    el("h1", { class: "page-title" }, "Daily Dua & Dhikr"),
+    el("p", { class: "duas-subtitle" }, "Essential duas and dhikr for every moment of your day"),
+  ]);
+
+  const versesWrap = el("div", { class: "verses-wrap" });
+  renderLoading(versesWrap);
+
+  const wrap = el("div", { class: "container text-container" }, [crumb, heading, versesWrap]);
+  app.appendChild(el("main", {}, wrap));
+
+  try {
+    const res = await fetch(`${RAW_ROOT}/${DUAS_JSON_PATH}`);
+    if (!res.ok) throw new Error(`Couldn't load duas.json (${res.status})`);
+    const duas = await res.json();
+
+    versesWrap.innerHTML = "";
+    duas.forEach((d) => {
+      const card = el("div", { class: "dua-card" }, [
+        el("h3", { class: "dua-title" }, d.title),
+        el("div", { class: "verse-arabic dua-arabic" }, d.arabic),
+        el("p", { class: "verse-translit" }, d.transliteration),
+        el("p", { class: "verse-urdu dua-translation" }, `\u201c${d.translation}\u201d`),
+        el("p", { class: "dua-reference" }, d.reference),
+      ]);
+      if (d.note) {
+        card.appendChild(el("p", { class: "dua-note" }, `\u2139 ${d.note}`));
+      }
+      versesWrap.appendChild(card);
+    });
+  } catch (e) {
+    versesWrap.innerHTML = "";
+    renderError(versesWrap, e.message);
+  }
+}
+
 function route() {
   const hash = window.location.hash.replace(/^#\/?/, "");
   const parts = hash.split("/").filter(Boolean);
 
-  if (parts[0] === "quran-text" && parts[1]) {
+  if (parts[0] === "duas") {
+    renderDuas();
+  } else if (parts[0] === "quran-text" && parts[1]) {
     renderQuranText(parseInt(parts[1], 10) || 1);
   } else if (parts[0] === "book" && parts[1] && parts[2] === "part" && parts[3]) {
     const startPage = parts[4] === "page" && parts[5] ? parseInt(parts[5], 10) : 1;

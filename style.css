@@ -290,6 +290,44 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   margin: 0;
 }
 
+.duas-subtitle {
+  font-family: var(--font-accent);
+  font-style: italic;
+  opacity: 0.7;
+  margin: -4px 0 8px;
+}
+
+.dua-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+.dua-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--emerald-deep);
+  margin: 0 0 14px;
+}
+.dua-arabic { margin-bottom: 4px; }
+.dua-translation { font-weight: 500; }
+.dua-reference {
+  font-size: 12px;
+  opacity: 0.6;
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.dua-note {
+  font-size: 12px;
+  color: var(--gold);
+  background: rgba(184, 134, 46, 0.1);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 10px;
+}
+
 .text-source-note {
   text-align: center;
   font-size: 12px;
