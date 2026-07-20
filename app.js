@@ -731,8 +731,8 @@ async function loadHadithBook(bookSlug) {
   return result;
 }
 
-// --- Home page hadith ticker: a new hadith slides right-to-left every 30s ---
-let tickerTimer = null;
+// --- Home page hadith ticker: hadith glide right-to-left, one after another ---
+let tickerActive = false;
 let tickerPool = [];
 let tickerPoolPromise = null;
 
@@ -776,10 +776,7 @@ async function buildTickerPool() {
 }
 
 function stopHadithTicker() {
-  if (tickerTimer) {
-    clearInterval(tickerTimer);
-    tickerTimer = null;
-  }
+  tickerActive = false;
 }
 
 async function startHadithTicker(container) {
@@ -794,13 +791,14 @@ async function startHadithTicker(container) {
   }
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const PIXELS_PER_SECOND = 130; // reading pace - lower is slower
+  const PAUSE_BETWEEN_MS = 900; // brief breather between hadith, not a long dead gap
   let idx = 0;
+  tickerActive = true;
 
-  function showNext() {
-    if (!container.isConnected) {
-      stopHadithTicker();
-      return;
-    }
+  async function cycle() {
+    if (!tickerActive || !container.isConnected) return;
+
     const h = pool[idx % pool.length];
     idx++;
     track.href = `#/hadith/${h.bookSlug}/${h.sectionNum}/h/${h.hadithnumber}`;
@@ -808,21 +806,38 @@ async function startHadithTicker(container) {
     track.appendChild(el("span", { class: "hadith-ticker-ref" }, `${h.bookName} ${h.hadithnumber}`));
     track.appendChild(el("span", { class: "hadith-ticker-text" }, h.snippet));
 
-    if (reduceMotion) return; // static text only, no motion for users who asked for less
+    if (reduceMotion) {
+      await new Promise((r) => setTimeout(r, 7000));
+      cycle();
+      return;
+    }
+
     const width = container.clientWidth;
     track.style.transform = `translateX(${width}px)`;
-    requestAnimationFrame(() => {
-      const trackWidth = track.scrollWidth;
-      track.getAnimations().forEach((a) => a.cancel());
-      track.animate(
-        [{ transform: `translateX(${width}px)` }, { transform: `translateX(-${trackWidth}px)` }],
-        { duration: 16000, easing: "linear", fill: "forwards" }
-      );
-    });
+    await new Promise((r) => requestAnimationFrame(r));
+    if (!tickerActive || !container.isConnected) return;
+
+    const trackWidth = track.scrollWidth;
+    const distance = width + trackWidth;
+    const duration = Math.min(24000, Math.max(12000, (distance / PIXELS_PER_SECOND) * 1000));
+
+    track.getAnimations().forEach((a) => a.cancel());
+    const anim = track.animate(
+      [{ transform: `translateX(${width}px)` }, { transform: `translateX(-${trackWidth}px)` }],
+      { duration, easing: "linear", fill: "forwards" }
+    );
+
+    try {
+      await anim.finished;
+    } catch (e) {
+      return; // cancelled (route change mid-flight) - stop the chain here
+    }
+    if (!tickerActive || !container.isConnected) return;
+    await new Promise((r) => setTimeout(r, PAUSE_BETWEEN_MS));
+    cycle();
   }
 
-  showNext();
-  tickerTimer = setInterval(showNext, 30000);
+  cycle();
 }
 
 async function renderHadithBooks() {
