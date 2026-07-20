@@ -7,8 +7,8 @@ window.SITE_CONFIG = {
 
   siteTitle: "QuranAnyWhere",
   tagline: "Read the Qur'an, part by part, anywhere.",
-  
-  // Shown in the "Report a correction" popup
+
+  // Shown in the "Report a correction" popup on hadith pages.
   // Change this to your own address.
   contactEmail: "talibahmad1793@gmail.com",
 };
