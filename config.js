@@ -10,5 +10,5 @@ window.SITE_CONFIG = {
   
   // Shown in the "Report a correction" popup
   // Change this to your own address.
-  contactEmail: "talibahmad1793@gmai1.com",
+  contactEmail: "talibahmad1793@gmail.com",
 };
