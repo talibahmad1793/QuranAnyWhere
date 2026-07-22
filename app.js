@@ -17,8 +17,14 @@ const DUAS_JSON_PATH = "duas/duas.json";
 // "Sahih al-Bukhari 1"), and reference.book/reference.hadith give the
 // traditional in-book chapter and position sunnah.com also shows.
 const HADITH_DATA_PATH = "hadith-data";
+const HADITH_ABOUT_PATH = "hadith-data/about";
 const HADITH_BOOKS = [
-  { slug: "bukhari", name: "Sahih al-Bukhari" },
+  {
+    slug: "bukhari",
+    name: "Sahih al-Bukhari",
+    shortDesc:
+      "Sahih al-Bukhari is a collection of hadith compiled by Imam Muhammad al-Bukhari (d. 256 AH/870 CE) (rahimahullah). His collection is recognized by the overwhelming majority of the Muslim world to be the most authentic collection of reports of the Sunnah of the Prophet Muhammad (\uFDFA). It contains over 7500 hadith (with repetitions) in 97 books. The translation provided here is by Dr. M. Muhsin Khan.",
+  },
   { slug: "muslim", name: "Sahih Muslim" },
   { slug: "abudawud", name: "Sunan Abi Dawud" },
   { slug: "tirmidhi", name: "Jami' at-Tirmidhi" },
@@ -874,9 +880,22 @@ async function renderHadithChapters(bookSlug) {
     ` / ${book ? book.name : bookSlug}`,
   ]);
   const heading = el("h1", { class: "page-title" }, book ? book.name : bookSlug);
+  const aboutBlockWrap = el("div");
+  if (book && book.shortDesc) {
+    aboutBlockWrap.appendChild(
+      el("p", { class: "hadith-collection-desc" }, [
+        book.shortDesc + " ",
+        el(
+          "a",
+          { href: `#/hadith-about/${bookSlug}`, target: "_blank", rel: "noopener" },
+          "More information \u2026"
+        ),
+      ])
+    );
+  }
   const listWrap = el("div");
   renderLoading(listWrap);
-  const wrap = el("div", { class: "container" }, [crumb, heading, listWrap]);
+  const wrap = el("div", { class: "container" }, [crumb, heading, aboutBlockWrap, listWrap]);
   app.appendChild(el("main", {}, wrap));
 
   try {
@@ -902,6 +921,48 @@ async function renderHadithChapters(bookSlug) {
   } catch (e) {
     listWrap.innerHTML = "";
     renderError(listWrap, e.message);
+  }
+}
+
+async function renderHadithAbout(bookSlug) {
+  app.innerHTML = "";
+  const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
+  const crumb = el("p", { class: "crumb" }, [
+    el("a", { href: "#/" }, "Library"),
+    " / ",
+    el("a", { href: "#/hadith" }, "Hadith Collections"),
+    " / ",
+    el("a", { href: `#/hadith/${bookSlug}` }, book ? book.name : bookSlug),
+    " / About",
+  ]);
+  const bodyWrap = el("div");
+  renderLoading(bodyWrap);
+  const wrap = el("div", { class: "container text-container about-page" }, [crumb, bodyWrap]);
+  app.appendChild(el("main", {}, wrap));
+
+  try {
+    const res = await fetch(`${RAW_ROOT}/${HADITH_ABOUT_PATH}/${bookSlug}.json`);
+    if (!res.ok) throw new Error("About information is not available yet for this collection.");
+    const data = await res.json();
+    bodyWrap.innerHTML = "";
+    bodyWrap.appendChild(el("h1", { class: "page-title about-title" }, data.title || (book ? book.name : bookSlug)));
+    const contentWrap = el("div", { class: "about-content" });
+    (data.content || []).forEach((block) => {
+      if (block.type === "heading") {
+        contentWrap.appendChild(el("h2", { class: "about-heading" }, block.text));
+      } else if (block.type === "paragraph") {
+        contentWrap.appendChild(el("p", { class: "about-paragraph" }, block.text));
+      } else if (block.type === "list") {
+        const tag = block.style === "number" ? "ol" : "ul";
+        const listEl = el(tag, { class: "about-list" });
+        (block.items || []).forEach((item) => listEl.appendChild(el("li", {}, item)));
+        contentWrap.appendChild(listEl);
+      }
+    });
+    bodyWrap.appendChild(contentWrap);
+  } catch (e) {
+    bodyWrap.innerHTML = "";
+    renderError(bodyWrap, e.message);
   }
 }
 
@@ -1150,6 +1211,8 @@ function route() {
 
   if (parts[0] === "search") {
     renderSearch(parts[1] ? decodeURIComponent(parts[1]) : "");
+  } else if (parts[0] === "hadith-about" && parts[1]) {
+    renderHadithAbout(decodeURIComponent(parts[1]));
   } else if (parts[0] === "hadith" && parts[1] && parts[2] && parts[3] === "h" && parts[4]) {
     renderHadithList(decodeURIComponent(parts[1]), parseInt(parts[2], 10), parseInt(parts[4], 10));
   } else if (parts[0] === "hadith" && parts[1] && parts[2]) {
