@@ -25,8 +25,24 @@ const HADITH_BOOKS = [
     shortDesc:
       "Sahih al-Bukhari is a collection of hadith compiled by Imam Muhammad al-Bukhari (d. 256 AH/870 CE) (rahimahullah). His collection is recognized by the overwhelming majority of the Muslim world to be the most authentic collection of reports of the Sunnah of the Prophet Muhammad (\uFDFA). It contains over 7500 hadith (with repetitions) in 97 books. The translation provided here is by Dr. M. Muhsin Khan.",
   },
-  { slug: "muslim", name: "Sahih Muslim" },
-  { slug: "abudawud", name: "Sunan Abi Dawud" },
+  {
+    slug: "muslim",
+    name: "Sahih Muslim",
+    shortDesc:
+      "Sahih Muslim is a collection of hadith compiled by Imam Muslim ibn al-Hajjaj al-Naysaburi (rahimahullah). His collection is considered one of the most authentic collections of the Sunnah of the Prophet Muhammad (\uFDFA), and together with Sahih al-Bukhari forms the \u2018Sahihain\u2019 (the Two Sahihs). It contains roughly 7,500 hadith (with repetitions) in 57 books. The translation provided here is by Abdul Hamid Siddiqui.",
+  },
+  {
+    slug: "abudawud",
+    name: "Sunan Abi Dawud",
+    shortDesc:
+      "Sunan Abi Dawud is a collection of hadith compiled by Imam Abu Dawud Sulaiman ibn al-Ash\u2019ath as-Sijistani (rahimahullah). It is one of the six canonical hadith collections (Kutub as-Sittah) and contains 5,274 hadith in 43 books.",
+    extraLinks: [
+      {
+        aboutSlug: "abudawud-letter",
+        label: "Letter from Imam Abu Dawud to the people of Makkah explaining his book, terms he uses, and his methodology.",
+      },
+    ],
+  },
   { slug: "tirmidhi", name: "Jami' at-Tirmidhi" },
   { slug: "nasai", name: "Sunan an-Nasa'i" },
   { slug: "ibnmajah", name: "Sunan Ibn Majah" },
@@ -893,6 +909,19 @@ async function renderHadithChapters(bookSlug) {
       ])
     );
   }
+  if (book && book.extraLinks && book.extraLinks.length) {
+    book.extraLinks.forEach((link) => {
+      aboutBlockWrap.appendChild(
+        el("p", { class: "hadith-collection-extra-link" }, [
+          el(
+            "a",
+            { href: `#/hadith-about/${bookSlug}/${link.aboutSlug}`, target: "_blank", rel: "noopener" },
+            link.label
+          ),
+        ])
+      );
+    });
+  }
   const listWrap = el("div");
   renderLoading(listWrap);
   const wrap = el("div", { class: "container" }, [crumb, heading, aboutBlockWrap, listWrap]);
@@ -924,16 +953,19 @@ async function renderHadithChapters(bookSlug) {
   }
 }
 
-async function renderHadithAbout(bookSlug) {
+async function renderHadithAbout(bookSlug, aboutSlug) {
   app.innerHTML = "";
   const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
+  const fileSlug = aboutSlug || bookSlug;
   const crumb = el("p", { class: "crumb" }, [
     el("a", { href: "#/" }, "Library"),
     " / ",
     el("a", { href: "#/hadith" }, "Hadith Collections"),
     " / ",
     el("a", { href: `#/hadith/${bookSlug}` }, book ? book.name : bookSlug),
-    " / About",
+    ...(aboutSlug
+      ? [" / ", el("a", { href: `#/hadith-about/${bookSlug}` }, "About"), " / Letter"]
+      : [" / About"]),
   ]);
   const bodyWrap = el("div");
   renderLoading(bodyWrap);
@@ -941,7 +973,7 @@ async function renderHadithAbout(bookSlug) {
   app.appendChild(el("main", {}, wrap));
 
   try {
-    const res = await fetch(`${RAW_ROOT}/${HADITH_ABOUT_PATH}/${bookSlug}.json`);
+    const res = await fetch(`${RAW_ROOT}/${HADITH_ABOUT_PATH}/${fileSlug}.json`);
     if (!res.ok) throw new Error("About information is not available yet for this collection.");
     const data = await res.json();
     bodyWrap.innerHTML = "";
@@ -1211,6 +1243,8 @@ function route() {
 
   if (parts[0] === "search") {
     renderSearch(parts[1] ? decodeURIComponent(parts[1]) : "");
+  } else if (parts[0] === "hadith-about" && parts[1] && parts[2]) {
+    renderHadithAbout(decodeURIComponent(parts[1]), decodeURIComponent(parts[2]));
   } else if (parts[0] === "hadith-about" && parts[1]) {
     renderHadithAbout(decodeURIComponent(parts[1]));
   } else if (parts[0] === "hadith" && parts[1] && parts[2] && parts[3] === "h" && parts[4]) {

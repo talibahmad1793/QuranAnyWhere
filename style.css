@@ -791,6 +791,15 @@ footer {
   white-space: nowrap;
 }
 .hadith-collection-desc a:hover { text-decoration: underline; }
+.hadith-collection-extra-link {
+  font-size: 14px;
+  margin: -14px 0 20px;
+}
+.hadith-collection-extra-link a {
+  color: var(--emerald-deep, #14532d);
+  text-decoration: none;
+}
+.hadith-collection-extra-link a:hover { text-decoration: underline; }
 
 .about-page { max-width: 760px; }
 .about-title { text-align: center; margin-bottom: 28px; }
