@@ -1159,7 +1159,7 @@ async function renderSearch(query) {
   const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Search"]);
 
   const form = el("form", { class: "search-form", id: "searchForm" }, [
-    el("input", { class: "search-input", id: "searchInput", type: "search", value: query || "", placeholder: "Search the Qur'an and Hadith\u2026", autofocus: "true" }),
+    el("input", { class: "search-input", id: "searchInput", type: "search", value: query || "", placeholder: "Search the Qur'an and Hadith, or type a hadith number\u2026", autofocus: "true" }),
     el("button", { class: "btn", type: "submit" }, "Search"),
   ]);
 
@@ -1174,7 +1174,7 @@ async function renderSearch(query) {
   });
 
   if (!query) {
-    resultsWrap.appendChild(el("p", { class: "state-msg" }, "Type something above to search across every Surah, Ayah, and Hadith on this site."));
+    resultsWrap.appendChild(el("p", { class: "state-msg" }, "Type something above to search across every Surah, Ayah, and Hadith on this site \u2014 or enter a hadith number to jump straight to it."));
     return;
   }
 
@@ -1182,14 +1182,28 @@ async function renderSearch(query) {
 
   try {
     const { quran, hadith } = await loadSearchIndex();
+    const trimmedQuery = query.trim();
+    const isNumericQuery = /^\d+$/.test(trimmedQuery);
 
-    // Whole-word/phrase matching, not raw substring - otherwise "ali" would
-    // match inside "maalik" or "Alif", which is what users actually hit.
-    const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const wordRegex = new RegExp(`\\b${escaped}\\b`, "i");
+    let quranMatches = [];
+    let hadithMatches = [];
+    let wordRegex = null;
 
-    const quranMatches = quran.filter((v) => wordRegex.test(v.t) || wordRegex.test(v.u)).slice(0, 40);
-    const hadithMatches = hadith.filter((h) => wordRegex.test(h.e)).slice(0, 40);
+    if (isNumericQuery) {
+      // Numeric query: treat as a hadith number lookup (the overall running
+      // number within its collection), not a text search. The same number
+      // can exist in several collections, so show every match.
+      const wantedNum = Number(trimmedQuery);
+      hadithMatches = hadith.filter((h) => h.n === wantedNum).slice(0, 60);
+    } else {
+      // Whole-word/phrase matching, not raw substring - otherwise "ali" would
+      // match inside "maalik" or "Alif", which is what users actually hit.
+      const escaped = trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      wordRegex = new RegExp(`\\b${escaped}\\b`, "i");
+
+      quranMatches = quran.filter((v) => wordRegex.test(v.t) || wordRegex.test(v.u)).slice(0, 40);
+      hadithMatches = hadith.filter((h) => wordRegex.test(h.e)).slice(0, 40);
+    }
 
     resultsWrap.innerHTML = "";
     resultsWrap.appendChild(
@@ -1213,7 +1227,7 @@ async function renderSearch(query) {
     if (hadithMatches.length > 0) {
       resultsWrap.appendChild(el("h2", { class: "search-section-title" }, "Hadith"));
       hadithMatches.forEach((h) => {
-        const snippet = snippetAround(h.e, query, 70);
+        const snippet = isNumericQuery ? snippetAround(h.e, "", 90) : snippetAround(h.e, query, 70);
         resultsWrap.appendChild(
           el("a", { class: "search-result", href: `#/hadith/${h.bk}/${h.sc}/h/${h.n}` }, [
             el(
@@ -1228,7 +1242,10 @@ async function renderSearch(query) {
     }
 
     if (quranMatches.length === 0 && hadithMatches.length === 0) {
-      resultsWrap.appendChild(el("p", { class: "state-msg" }, "No matches found. Try a different word or phrase."));
+      const msg = isNumericQuery
+        ? `No hadith numbered ${trimmedQuery} was found in any collection.`
+        : "No matches found. Try a different word or phrase.";
+      resultsWrap.appendChild(el("p", { class: "state-msg" }, msg));
     }
   } catch (e) {
     resultsWrap.innerHTML = "";
