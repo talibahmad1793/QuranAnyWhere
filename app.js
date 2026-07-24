@@ -43,10 +43,30 @@ const HADITH_BOOKS = [
       },
     ],
   },
-  { slug: "tirmidhi", name: "Jami' at-Tirmidhi" },
-  { slug: "nasai", name: "Sunan an-Nasa'i" },
-  { slug: "ibnmajah", name: "Sunan Ibn Majah" },
-  { slug: "malik", name: "Muwatta Malik" },
+  {
+    slug: "tirmidhi",
+    name: "Jami' at-Tirmidhi",
+    shortDesc:
+      "Jami' at-Tirmidhi is a collection of hadith compiled by Imam Abu 'Isa Muhammad at-Tirmidhi (rahimahullah). It is one of the six canonical collections of hadith (Kutub as-Sittah) and contains roughly 4,400 hadith (with repetitions) in 46 books.",
+  },
+  {
+    slug: "nasai",
+    name: "Sunan an-Nasa'i",
+    shortDesc:
+      "Sunan an-Nasa'i is a collection of hadith compiled by Imam Ahmad an-Nasa'i (rahimahullah). It is unanimously regarded as one of the six canonical collections of hadith (Kutub as-Sittah) and contains roughly 5,700 hadith (with repetitions) in 52 books.",
+  },
+  {
+    slug: "ibnmajah",
+    name: "Sunan Ibn Majah",
+    shortDesc:
+      "Sunan Ibn Majah is a collection of hadith compiled by Imam Muhammad bin Yazid Ibn Majah al-Qazvini (rahimahullah). It is widely regarded as the sixth of the six canonical collections of hadith (Kutub as-Sittah) and contains 4,341 hadith arranged in 37 books.",
+  },
+  {
+    slug: "malik",
+    name: "Muwatta Malik",
+    shortDesc:
+      "Al-Muwatta of Imam Malik is one of the earliest and most influential collections of hadith and Islamic jurisprudence, compiled by Imam Malik ibn Anas (rahimahullah). It contains hadith, statements of the Companions, opinions of the Tabi'in, and the legal practice of the people of Madinah.",
+  },
   { slug: "nawawi", name: "40 Hadith of an-Nawawi" },
   { slug: "qudsi", name: "40 Hadith Qudsi" },
   { slug: "dehlawi", name: "40 Hadith of Shah Waliullah Dehlawi" },
