@@ -1,6 +1,9 @@
 const cfg = window.SITE_CONFIG;
 const API_ROOT = `https://api.github.com/repos/${cfg.githubOwner}/${cfg.githubRepo}/contents`;
-const RAW_ROOT = `https://raw.githubusercontent.com/${cfg.githubOwner}/${cfg.githubRepo}/${cfg.githubBranch}`;
+// Data files (Quran text, hadith, duas, search indexes) are already part of
+// this deployed site, so we fetch them same-origin instead of round-tripping
+// to raw.githubusercontent.com - much faster and avoids an extra DNS/TLS hop.
+const RAW_ROOT = ".";
 const PROGRESS_PREFIX = "qaw:progress:";
 
 // Verified, structured Quran text data (not OCR). Sourced originally from
