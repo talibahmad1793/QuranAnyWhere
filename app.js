@@ -1,5 +1,27 @@
 const cfg = window.SITE_CONFIG;
 const API_ROOT = `https://api.github.com/repos/${cfg.githubOwner}/${cfg.githubRepo}/contents`;
+
+// Updates the document title + meta description for the current route.
+// Note: canonical/og:url intentionally stay fixed to the homepage. Everything
+// after "#" never reaches the server (there's no real /hadith/bukhari page
+// for GitHub Pages to serve), so pointing canonical at a hash path would
+// claim a URL exists that a crawler would just get a 404 on. Title/description
+// still matter for browser tabs, bookmarks, and Googlebot's rendered snapshot.
+function setMeta({ title, description, full }) {
+  const fullTitle = full || (title ? `${title} | ${cfg.siteTitle}` : cfg.siteTitle);
+  document.title = fullTitle;
+
+  const descTag = document.querySelector('meta[name="description"]');
+  if (descTag && description) descTag.setAttribute("content", description);
+
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) ogTitle.setAttribute("content", fullTitle);
+
+  const ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogDesc && description) ogDesc.setAttribute("content", description);
+}
+
+
 // Data files (Quran text, hadith, duas, search indexes) are already part of
 // this deployed site, so we fetch them same-origin instead of round-tripping
 // to raw.githubusercontent.com - much faster and avoids an extra DNS/TLS hop.
@@ -247,6 +269,10 @@ function partHref(bookSlug, fileName, page) {
 }
 
 async function renderHome() {
+  setMeta({
+    full: "QuranAnyWhere — Read the Qur'an and Hadith Online, Free",
+    description: "Read the Qur'an juz by juz and explore Hinglish translations of Sahih al-Bukhari, Sahih Muslim & more hadith collections — free, anywhere, on any device.",
+  });
   app.innerHTML = "";
   const hero = el("section", { class: "hero" }, [
     el("div", { class: "container" }, [
@@ -329,6 +355,10 @@ async function renderHome() {
 }
 
 async function renderBook(bookSlug) {
+  setMeta({
+    title: titleFromSlug(bookSlug),
+    description: `Read ${titleFromSlug(bookSlug)} online, free, on any device — part of the QuranAnyWhere library.`,
+  });
   app.innerHTML = "";
   const main = el("main", { class: "container" });
   app.appendChild(main);
@@ -389,6 +419,10 @@ async function renderBook(bookSlug) {
 // (allowed - GitHub raw sends Access-Control-Allow-Origin: *) and render
 // pages with PDF.js onto a canvas.
 async function renderPart(bookSlug, fileName, startPage) {
+  setMeta({
+    title: `${titleFromSlug(fileName)} — ${titleFromSlug(bookSlug)}`,
+    description: `Read ${titleFromSlug(fileName)} from ${titleFromSlug(bookSlug)}, free, on any device.`,
+  });
   app.innerHTML = "";
   const rawUrl = `${RAW_ROOT}/${bookSlug}/${encodeURIComponent(fileName)}`;
 
@@ -578,8 +612,12 @@ async function fetchJuz(juzNumber) {
 }
 
 async function renderQuranText(juzNumber, scrollTarget) {
-  app.innerHTML = "";
   juzNumber = Math.max(1, Math.min(juzNumber, 30));
+  setMeta({
+    title: `Quran Juz ${juzNumber} — Read Online`,
+    description: `Read Juz ${juzNumber} of the Holy Quran online with translation, free, on any device.`,
+  });
+  app.innerHTML = "";
 
   const crumb = el("p", { class: "crumb" }, [
     el("a", { href: "#/" }, "Library"),
@@ -655,6 +693,10 @@ async function renderQuranText(juzNumber, scrollTarget) {
 }
 
 async function renderDuas(scrollTarget) {
+  setMeta({
+    title: "Daily Dua & Dhikr",
+    description: "Essential duas and adhkar for every moment of your day — read online, free.",
+  });
   app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Daily Dua & Dhikr"]);
   const heading = el("div", {}, [
@@ -886,6 +928,10 @@ async function startHadithTicker(container) {
 }
 
 async function renderHadithBooks() {
+  setMeta({
+    title: "Hadith Collections",
+    description: "Sahih al-Bukhari, Sahih Muslim, and 8 more authentic hadith collections — Arabic text with English translation, free online.",
+  });
   app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Hadith Collections"]);
   const heading = el("div", {}, [
@@ -910,8 +956,12 @@ async function renderHadithBooks() {
 }
 
 async function renderHadithChapters(bookSlug) {
-  app.innerHTML = "";
   const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
+  setMeta({
+    title: book ? book.name : bookSlug,
+    description: book && book.shortDesc ? book.shortDesc.slice(0, 155) : `Browse the chapters of ${book ? book.name : bookSlug}, free online.`,
+  });
+  app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [
     el("a", { href: "#/" }, "Library"),
     " / ",
@@ -977,8 +1027,12 @@ async function renderHadithChapters(bookSlug) {
 }
 
 async function renderHadithAbout(bookSlug, aboutSlug) {
-  app.innerHTML = "";
   const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
+  setMeta({
+    title: `About ${book ? book.name : bookSlug}`,
+    description: book && book.shortDesc ? book.shortDesc.slice(0, 155) : `Learn about ${book ? book.name : bookSlug}.`,
+  });
+  app.innerHTML = "";
   const fileSlug = aboutSlug || bookSlug;
   const crumb = el("p", { class: "crumb" }, [
     el("a", { href: "#/" }, "Library"),
@@ -1022,8 +1076,12 @@ async function renderHadithAbout(bookSlug, aboutSlug) {
 }
 
 async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
-  app.innerHTML = "";
   const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
+  setMeta({
+    title: `${book ? book.name : bookSlug} — Book ${sectionNum}`,
+    description: `Read Book ${sectionNum} of ${book ? book.name : bookSlug} with English translation, free online.`,
+  });
+  app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [
     el("a", { href: "#/" }, "Library"),
     " / ",
@@ -1178,6 +1236,10 @@ function snippetAround(text, query, radius) {
 }
 
 async function renderSearch(query) {
+  setMeta({
+    title: query ? `Search: ${query}` : "Search",
+    description: "Search the Qur'an and Hadith collections on QuranAnyWhere.",
+  });
   app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Search"]);
 
