@@ -8,6 +8,13 @@
     <link rel="canonical" href="https://quranaw.com/" />
     <meta name="robots" content="index, follow" />
 
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#1b4b43" />
+
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="QuranAnyWhere" />
     <meta property="og:title" content="QuranAnyWhere — Read the Qur'an and Hadith Online, Free" />
@@ -36,7 +43,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=9" />
+    <link rel="stylesheet" href="style.css?v=10" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
       pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -64,11 +71,109 @@
 
     <div id="app"></div>
 
-    <footer>
-      We're currently working on translating more hadith collections into Hinglish — more collections coming soon, Insha'Allah.
+    <footer class="site-footer">
+      <div class="container footer-top">
+        <div class="footer-brand-col">
+          <a href="#/" class="footer-brand">
+            <span class="footer-logo">
+              <svg width="22" height="22" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+                <path d="M13 2 L15.2 9.8 L23 12 L15.2 14.2 L13 22 L10.8 14.2 L3 12 L10.8 9.8 Z" fill="var(--gold)" />
+              </svg>
+            </span>
+            <span class="footer-brand-text">Quran<span class="footer-brand-accent">AW</span></span>
+          </a>
+          <p class="footer-tagline">Read. Reflect. Live.</p>
+          <p class="footer-blurb">
+            We're currently working on translating more hadith collections into Hinglish —
+            more collections coming soon, Insha'Allah.
+          </p>
+          <div class="footer-social" aria-label="Follow us on social media">
+            <a href="#" aria-label="Facebook" class="footer-social-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-8.1h2.7l.4-3.2h-3.1V7.7c0-.9.3-1.5 1.6-1.5h1.6V3.4C16.4 3.3 15.3 3 14.1 3c-2.5 0-4.2 1.5-4.2 4.4v2.3H7.2v3.2h2.7V21h3.6z"/></svg>
+            </a>
+            <a href="#" aria-label="Instagram" class="footer-social-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+            </a>
+            <a href="#" aria-label="YouTube" class="footer-social-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12s0-3.2-.4-4.7c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.5c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.7c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.5c.9-.2 1.6-.9 1.8-1.8.4-1.5.4-4.7.4-4.7zM10 15.3V8.7l5.8 3.3-5.8 3.3z"/></svg>
+            </a>
+            <a href="#" aria-label="Telegram" class="footer-social-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3 2.7 11.7c-1 .4-1 1 .2 1.3l4.9 1.5 1.9 5.8c.2.6.4.9.9.9.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8L22 5.4c.3-1.2-.4-1.7-1.1-1.1z"/></svg>
+            </a>
+            <a href="#" aria-label="WhatsApp" class="footer-social-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5.1-.1.2-.3.4-.4.1-.1.2-.2.2-.4.1-.2 0-.3 0-.4 0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.2 1.6 2.5 4 3.5.6.2 1 .4 1.3.5.6.2 1.1.1 1.5-.1.5-.2 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <nav class="footer-col" aria-label="Quran links">
+          <h3 class="footer-col-title">Quran</h3>
+          <ul>
+            <li><a href="#/quran-text/1">Read Quran</a></li>
+            <li><span class="footer-link-soon" title="Coming soon">Surahs</span></li>
+            <li><a href="#/quran-text/1">Juz / Para</a></li>
+            <li><a href="#/quran-text/1">Translation</a></li>
+            <li><span class="footer-link-soon" title="Coming soon">Tafsir</span></li>
+          </ul>
+        </nav>
+
+        <nav class="footer-col" aria-label="Hadith links">
+          <h3 class="footer-col-title">Hadith</h3>
+          <ul>
+            <li><a href="#/hadith/bukhari">Sahih Bukhari</a></li>
+            <li><a href="#/hadith/muslim">Sahih Muslim</a></li>
+            <li><a href="#/hadith/tirmidhi">Jami' Tirmidhi</a></li>
+            <li><a href="#/hadith/abudawud">Sunan Abu Dawud</a></li>
+            <li><a href="#/hadith/ibnmajah">Sunan Ibn Majah</a></li>
+            <li><a href="#/hadith">More Books</a></li>
+          </ul>
+        </nav>
+
+        <nav class="footer-col" aria-label="Learn links">
+          <h3 class="footer-col-title">Learn</h3>
+          <ul>
+            <li><span class="footer-link-soon" title="Coming soon">Daily Verse</span></li>
+            <li><a href="#/duas">Dua &amp; Azkar</a></li>
+            <li><span class="footer-link-soon" title="Coming soon">Islamic Articles</span></li>
+            <li><span class="footer-link-soon" title="Coming soon">Prayer Times</span></li>
+            <li><span class="footer-link-soon" title="Coming soon">Islamic Calendar</span></li>
+            <li><span class="footer-link-soon" title="Coming soon">Qibla Direction</span></li>
+          </ul>
+        </nav>
+
+        <nav class="footer-col" aria-label="About links">
+          <h3 class="footer-col-title">About</h3>
+          <ul>
+            <li><span class="footer-link-soon" title="Coming soon">About Us</span></li>
+            <li><a href="mailto:support@quranaw.com">Contact Us</a></li>
+            <li><span class="footer-link-soon" title="Coming soon">Privacy Policy</span></li>
+            <li><span class="footer-link-soon" title="Coming soon">Terms of Use</span></li>
+            <li><span class="footer-link-soon" title="Coming soon">Disclaimer</span></li>
+          </ul>
+        </nav>
+
+        <!-- Support / Donation box — disabled for now, re-enable when donations are ready.
+        <div class="footer-support-box">
+          <h3 class="footer-col-title">Support QuranAW</h3>
+          <p>QuranAW is your trusted platform to read the Holy Quran and authentic Hadiths with multiple translations. Your support helps us spread the message of Quran &amp; Sunnah.</p>
+          <a href="#/donate" class="btn btn-primary footer-donate-btn">Donate Now</a>
+          <p class="footer-secure">Secure Payments</p>
+        </div>
+        -->
+      </div>
+
+      <div class="container footer-bottom">
+        <p>&copy; <span data-year>2025</span> QuranAW.com &bull; All Rights Reserved</p>
+        <p class="footer-bottom-arabic">القرآن والسنة نور الحياة</p>
+      </div>
     </footer>
 
-    <script src="config.js?v=9"></script>
-    <script src="app.js?v=9"></script>
+    <script src="config.js?v=10"></script>
+    <script src="app.js?v=10"></script>
+    <script>
+      document.querySelectorAll("[data-year]").forEach((el) => {
+        el.textContent = new Date().getFullYear();
+      });
+    </script>
   </body>
 </html>
