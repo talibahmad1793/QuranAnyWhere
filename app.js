@@ -471,7 +471,7 @@ async function renderPart(bookSlug, fileName, startPage) {
     canvasScroll,
     el("button", { class: "page-nav-btn page-nav-btn--next", id: "nextBtn", "aria-label": "Next page" }, "\u203a"),
   ]);
-  const hint = el("p", { class: "viewer-hint" }, "Swipe to turn pages \u00b7 double-tap to zoom");
+  const hint = el("p", { class: "viewer-hint" }, "Swipe to turn pages \u00b7 pinch or double-tap to zoom");
 
   const viewerWrap = el("div", { class: "viewer-wrap" }, [topBar, canvasWrap, hint]);
   const wrap = el("div", { class: "container" }, [crumb, viewerWrap]);
@@ -497,6 +497,7 @@ async function renderPart(bookSlug, fileName, startPage) {
   let currentPage = 1;
   let rendering = false;
   let zoomed = false;
+  let zoomScale = 1; // continuous multiplier on top of fitScale; 1 = fit-width
 
   async function renderPage(num) {
     if (!pdfDoc || rendering) return;
@@ -516,7 +517,7 @@ async function renderPart(bookSlug, fileName, startPage) {
     // mobile readers expect to scroll down a tall page, same as any PDF or
     // e-book app, rather than have everything squeezed to fit one screen.
     const fitScale = Math.min(availableWidth, desktopCap) / baseViewport.width;
-    const scale = zoomed ? fitScale * 1.9 : fitScale;
+    const scale = fitScale * zoomScale;
     const viewport = page.getViewport({ scale });
 
     // Render at device pixel ratio so text stays crisp on phone screens.
@@ -543,6 +544,7 @@ async function renderPart(bookSlug, fileName, startPage) {
 
   function setZoom(nextZoomed) {
     zoomed = nextZoomed;
+    zoomScale = nextZoomed ? 1.9 : 1;
     canvasScroll.classList.toggle("zoomed", zoomed);
     canvasScroll.scrollLeft = 0;
     canvasScroll.scrollTop = 0;
@@ -584,12 +586,14 @@ async function renderPart(bookSlug, fileName, startPage) {
   window.addEventListener("resize", onResize);
 
   // Swipe to turn pages (only while not zoomed in - while zoomed, a swipe
-  // pans around the enlarged page instead).
+  // pans around the enlarged page instead). Guarded against multi-touch so
+  // a pinch gesture (handled separately below) never gets misread as a swipe.
   let touchStartX = 0;
   let touchStartY = 0;
   canvasScroll.addEventListener(
     "touchstart",
     (e) => {
+      if (e.touches.length !== 1) return;
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
     },
@@ -598,7 +602,7 @@ async function renderPart(bookSlug, fileName, startPage) {
   canvasScroll.addEventListener(
     "touchend",
     (e) => {
-      if (zoomed) return;
+      if (zoomed || pinchJustEnded || e.changedTouches.length !== 1 || e.touches.length !== 0) return;
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = e.changedTouches[0].clientY - touchStartY;
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
@@ -609,9 +613,77 @@ async function renderPart(bookSlug, fileName, startPage) {
     { passive: true }
   );
 
-  // Double-tap / double-click to toggle zoom.
+  // Two-finger pinch to zoom in/out, in addition to the double-tap/double-
+  // click shortcut below. While pinching, we scale the canvas live with a
+  // cheap CSS transform (smooth, no re-render cost); once the fingers lift,
+  // we bake the final zoom level into an actual pdf.js re-render so the
+  // page stays crisp rather than a blurry stretched bitmap.
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 3.5;
+  let pinchStartDist = 0;
+  let pinchStartScale = 1;
+  let pinching = false;
+  let pinchJustEnded = false;
+
+  function touchDist(touches) {
+    const [a, b] = touches;
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  }
+
+  canvasScroll.addEventListener(
+    "touchstart",
+    (e) => {
+      if (e.touches.length === 2) {
+        pinching = true;
+        pinchStartDist = touchDist(e.touches);
+        pinchStartScale = zoomScale;
+        canvas.style.transition = "none";
+      }
+    },
+    { passive: true }
+  );
+
+  canvasScroll.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!pinching || e.touches.length !== 2) return;
+      e.preventDefault();
+      const ratio = touchDist(e.touches) / pinchStartDist;
+      const liveScale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, pinchStartScale * ratio));
+      canvas.style.transform = `scale(${liveScale / zoomScale})`;
+    },
+    { passive: false }
+  );
+
+  function endPinch(e) {
+    if (!pinching) return;
+    if (e.touches.length >= 2) return; // still pinching with 2+ fingers (e.g. a 3rd touch briefly registered)
+    pinching = false;
+    canvas.style.transition = "";
+    // Read back whatever scale the live CSS transform landed on and bake it
+    // into a real pdf.js render at that resolution. This must run whenever
+    // the touch count drops below 2 - not only when it reaches exactly 0 -
+    // since people usually lift one finger slightly before the other,
+    // which would otherwise leave a stale CSS transform stuck on the
+    // canvas, out of sync with the real zoomScale.
+    const currentTransform = canvas.style.transform.match(/scale\(([\d.]+)\)/);
+    const appliedRatio = currentTransform ? parseFloat(currentTransform[1]) : 1;
+    canvas.style.transform = "";
+    zoomScale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomScale * appliedRatio));
+    zoomed = zoomScale > 1.05;
+    canvasScroll.classList.toggle("zoomed", zoomed);
+    renderPage(currentPage);
+    pinchJustEnded = true;
+    setTimeout(() => (pinchJustEnded = false), 300);
+  }
+  canvasScroll.addEventListener("touchend", endPinch, { passive: true });
+  canvasScroll.addEventListener("touchcancel", endPinch, { passive: true });
+
+  // Double-tap / double-click to toggle between fit-width and a fixed
+  // zoomed-in level - a quick shortcut alongside free pinch-to-zoom above.
   let lastTap = 0;
   canvasScroll.addEventListener("click", () => {
+    if (pinchJustEnded) return;
     const now = Date.now();
     if (now - lastTap < 350) setZoom(!zoomed);
     lastTap = now;
