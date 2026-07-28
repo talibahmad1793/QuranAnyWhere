@@ -1,12 +1,11 @@
 const cfg = window.SITE_CONFIG;
-const API_ROOT = `https://api.github.com/repos/${cfg.githubOwner}/${cfg.githubRepo}/contents`;
+const SITE_ORIGIN = "https://www.quranaw.com";
 
-// Updates the document title + meta description for the current route.
-// Note: canonical/og:url intentionally stay fixed to the homepage. Everything
-// after "#" never reaches the server (there's no real /hadith/bukhari page
-// for GitHub Pages to serve), so pointing canonical at a hash path would
-// claim a URL exists that a crawler would just get a 404 on. Title/description
-// still matter for browser tabs, bookmarks, and Googlebot's rendered snapshot.
+// Updates the document title, meta description, canonical URL, and OG tags
+// for the current route. Now that routing uses real paths (via the History
+// API + the 404.html redirect trick) instead of "#/..." hash fragments,
+// every route is a genuine, independently-crawlable URL, so canonical/og:url
+// correctly point at wherever the visitor actually is.
 function setMeta({ title, description, full }) {
   const fullTitle = full || (title ? `${title} | ${cfg.siteTitle}` : cfg.siteTitle);
   document.title = fullTitle;
@@ -19,13 +18,24 @@ function setMeta({ title, description, full }) {
 
   const ogDesc = document.querySelector('meta[property="og:description"]');
   if (ogDesc && description) ogDesc.setAttribute("content", description);
+
+  const canonicalUrl = `${SITE_ORIGIN}${window.location.pathname}`;
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute("href", canonicalUrl);
+
+  const ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl) ogUrl.setAttribute("content", canonicalUrl);
 }
 
 
 // Data files (Quran text, hadith, duas, search indexes) are already part of
 // this deployed site, so we fetch them same-origin instead of round-tripping
 // to raw.githubusercontent.com - much faster and avoids an extra DNS/TLS hop.
-const RAW_ROOT = ".";
+// IMPORTANT: this must be root-relative ("/"), not a bare "." (relative to
+// current path) - now that routing uses real paths like /hadith/bukhari
+// instead of "#/..." hashes, a relative "." would resolve against whatever
+// the current URL happens to be (e.g. "/hadith/") and silently 404.
+const RAW_ROOT = "";
 const PROGRESS_PREFIX = "qaw:progress:";
 
 // Verified, structured Quran text data (not OCR). Sourced originally from
@@ -135,13 +145,21 @@ function titleFromSlug(slug) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Reads a pre-generated, same-origin manifest.json instead of calling the
+// live GitHub API. This is what previously hit api.github.com's 60
+// requests/hour/IP unauthenticated rate limit on every homepage visit and
+// every book page - a real risk once real traffic is shared behind the same
+// IP (mobile carrier CGNAT, office/school/mosque WiFi, etc). Static files
+// served through GitHub Pages' CDN have no such limit.
+// Root manifest.json lists the top-level book folders; each book folder has
+// its own manifest.json listing its PDF files. Regenerate these with
+// generate-manifests.py whenever you add/remove a book or PDF file.
 async function githubList(path) {
-  const url = path ? `${API_ROOT}/${path}?ref=${cfg.githubBranch}` : `${API_ROOT}?ref=${cfg.githubBranch}`;
-  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+  const url = path ? `/${path}/manifest.json` : `/manifest.json`;
+  const res = await fetch(url);
   if (!res.ok) {
-    if (res.status === 403) throw new Error("GitHub API rate limit reached. Try again in a bit.");
-    if (res.status === 404) throw new Error("Repo or folder not found. Check config.js.");
-    throw new Error(`GitHub API error (${res.status})`);
+    if (res.status === 404) throw new Error("manifest.json not found. Run generate-manifests.py after adding files.");
+    throw new Error(`Manifest fetch error (${res.status})`);
   }
   return res.json();
 }
@@ -264,7 +282,7 @@ function setProgress(bookSlug, file, page) {
 }
 
 function partHref(bookSlug, fileName, page) {
-  const base = `#/book/${encodeURIComponent(bookSlug)}/part/${encodeURIComponent(fileName)}`;
+  const base = `/book/${encodeURIComponent(bookSlug)}/part/${encodeURIComponent(fileName)}`;
   return page && page > 1 ? `${base}/page/${page}` : base;
 }
 
@@ -317,7 +335,7 @@ async function renderHome() {
       }
       const card = el(
         "a",
-        { class: "card", href: progress ? partHref(folder.name, progress.file, progress.page) : `#/book/${encodeURIComponent(folder.name)}` },
+        { class: "card", href: progress ? partHref(folder.name, progress.file, progress.page) : `/book/${encodeURIComponent(folder.name)}` },
         [el("div", { class: "card-spine" }), el("div", { class: "card-body" }, body)]
       );
       grid.appendChild(card);
@@ -326,7 +344,7 @@ async function renderHome() {
     // Typed (non-PDF) collections, sourced from JSON in this repo rather
     // than a folder of files.
     grid.appendChild(
-      el("a", { class: "card", href: "#/duas" }, [
+      el("a", { class: "card", href: "/duas" }, [
         el("div", { class: "card-spine" }),
         el("div", { class: "card-body" }, [
           el("span", { class: "card-kicker" }, "Typed text"),
@@ -337,7 +355,7 @@ async function renderHome() {
     );
 
     grid.appendChild(
-      el("a", { class: "card", href: "#/hadith" }, [
+      el("a", { class: "card", href: "/hadith" }, [
         el("div", { class: "card-spine" }),
         el("div", { class: "card-body" }, [
           el("span", { class: "card-kicker" }, "Typed text"),
@@ -362,7 +380,7 @@ async function renderBook(bookSlug) {
   app.innerHTML = "";
   const main = el("main", { class: "container" });
   app.appendChild(main);
-  main.appendChild(el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), ` / ${titleFromSlug(bookSlug)}`]));
+  main.appendChild(el("p", { class: "crumb" }, [el("a", { href: "/" }, "Library"), ` / ${titleFromSlug(bookSlug)}`]));
   main.appendChild(el("h1", { class: "page-title" }, titleFromSlug(bookSlug)));
 
   const progress = getProgress(bookSlug);
@@ -377,7 +395,7 @@ async function renderBook(bookSlug) {
 
   if (bookSlug === QURAN_TEXT_BOOK_SLUG) {
     main.appendChild(
-      el("a", { class: "text-mode-banner", href: "#/quran-text/1" }, [
+      el("a", { class: "text-mode-banner", href: "/quran-text/1" }, [
         el("span", {}, "\u0627 Read as typed text"),
         el("span", { class: "continue-banner-detail" }, "Arabic \u00b7 transliteration \u00b7 Urdu translation \u2014 no scanned pages"),
       ])
@@ -427,14 +445,14 @@ async function renderPart(bookSlug, fileName, startPage) {
   const rawUrl = `${RAW_ROOT}/${bookSlug}/${encodeURIComponent(fileName)}`;
 
   const crumb = el("p", { class: "crumb" }, [
-    el("a", { href: "#/" }, "Library"),
+    el("a", { href: "/" }, "Library"),
     " / ",
-    el("a", { href: `#/book/${encodeURIComponent(bookSlug)}` }, titleFromSlug(bookSlug)),
+    el("a", { href: `/book/${encodeURIComponent(bookSlug)}` }, titleFromSlug(bookSlug)),
     ` / ${titleFromSlug(fileName)}`,
   ]);
 
   const topBar = el("div", { class: "viewer-top" }, [
-    el("a", { href: `#/book/${encodeURIComponent(bookSlug)}` }, "\u2190 Back to parts"),
+    el("a", { href: `/book/${encodeURIComponent(bookSlug)}` }, "\u2190 Back to parts"),
     el("span", { class: "viewer-part-label" }, titleFromSlug(fileName)),
     el("span", { class: "viewer-page-counter", id: "pageCounter" }, ""),
   ]);
@@ -529,7 +547,7 @@ async function renderPart(bookSlug, fileName, startPage) {
     if (currentPage < pdfDoc.numPages) {
       renderPage(currentPage + 1);
     } else if (fileIndex >= 0 && fileIndex < siblingFiles.length - 1) {
-      window.location.hash = partHref(bookSlug, siblingFiles[fileIndex + 1]);
+      navigate(partHref(bookSlug, siblingFiles[fileIndex + 1]));
     }
   }
 
@@ -538,7 +556,7 @@ async function renderPart(bookSlug, fileName, startPage) {
     if (currentPage > 1) {
       renderPage(currentPage - 1);
     } else if (fileIndex > 0) {
-      window.location.hash = partHref(bookSlug, siblingFiles[fileIndex - 1]);
+      navigate(partHref(bookSlug, siblingFiles[fileIndex - 1]));
     }
   }
 
@@ -620,22 +638,22 @@ async function renderQuranText(juzNumber, scrollTarget) {
   app.innerHTML = "";
 
   const crumb = el("p", { class: "crumb" }, [
-    el("a", { href: "#/" }, "Library"),
+    el("a", { href: "/" }, "Library"),
     " / ",
-    el("a", { href: `#/book/${encodeURIComponent(QURAN_TEXT_BOOK_SLUG)}` }, "Quran Roman Urdu Hindi"),
+    el("a", { href: `/book/${encodeURIComponent(QURAN_TEXT_BOOK_SLUG)}` }, "Quran Roman Urdu Hindi"),
     ` / Juz ${juzNumber} (typed text)`,
   ]);
 
   const topBar = el("div", { class: "text-top-bar" }, [
     el(
       "a",
-      { class: "text-nav-link", href: juzNumber > 1 ? `#/quran-text/${juzNumber - 1}` : "#", "aria-disabled": juzNumber <= 1 },
+      { class: "text-nav-link", href: juzNumber > 1 ? `/quran-text/${juzNumber - 1}` : "#", "aria-disabled": juzNumber <= 1 },
       "\u2039 Juz " + (juzNumber - 1)
     ),
     el("span", { class: "text-juz-label" }, `Juz ${juzNumber}`),
     el(
       "a",
-      { class: "text-nav-link", href: juzNumber < 30 ? `#/quran-text/${juzNumber + 1}` : "#", "aria-disabled": juzNumber >= 30 },
+      { class: "text-nav-link", href: juzNumber < 30 ? `/quran-text/${juzNumber + 1}` : "#", "aria-disabled": juzNumber >= 30 },
       "Juz " + (juzNumber + 1) + " \u203a"
     ),
   ]);
@@ -698,7 +716,7 @@ async function renderDuas(scrollTarget) {
     description: "Essential duas and adhkar for every moment of your day — read online, free.",
   });
   app.innerHTML = "";
-  const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Daily Dua & Dhikr"]);
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: "/" }, "Library"), " / Daily Dua & Dhikr"]);
   const heading = el("div", {}, [
     el("h1", { class: "page-title" }, "Daily Dua & Dhikr"),
     el("p", { class: "duas-subtitle" }, "Essential duas and dhikr for every moment of your day"),
@@ -711,7 +729,7 @@ async function renderDuas(scrollTarget) {
   app.appendChild(el("main", {}, wrap));
 
   function duaUrl(i) {
-    return `${window.location.origin}${window.location.pathname}#/duas/${i}`;
+    return `${window.location.origin}/duas/${i}`;
   }
 
   function duaShareText(d, i) {
@@ -867,7 +885,7 @@ function stopHadithTicker() {
 }
 
 async function startHadithTicker(container) {
-  const track = el("a", { class: "hadith-ticker-track", href: "#/hadith" });
+  const track = el("a", { class: "hadith-ticker-track", href: "/hadith" });
   container.appendChild(track);
 
   const pool = await buildTickerPool();
@@ -888,7 +906,7 @@ async function startHadithTicker(container) {
 
     const h = pool[idx % pool.length];
     idx++;
-    track.href = `#/hadith/${h.bookSlug}/${h.sectionNum}/h/${h.hadithnumber}`;
+    track.href = `/hadith/${h.bookSlug}/${h.sectionNum}/h/${h.hadithnumber}`;
     track.innerHTML = "";
     track.appendChild(el("span", { class: "hadith-ticker-ref" }, `${h.bookName} ${h.hadithnumber}`));
     track.appendChild(el("span", { class: "hadith-ticker-text" }, h.snippet));
@@ -933,7 +951,7 @@ async function renderHadithBooks() {
     description: "Sahih al-Bukhari, Sahih Muslim, and 8 more authentic hadith collections — Arabic text with English translation, free online.",
   });
   app.innerHTML = "";
-  const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Hadith Collections"]);
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: "/" }, "Library"), " / Hadith Collections"]);
   const heading = el("div", {}, [
     el("h1", { class: "page-title" }, "Hadith Collections"),
     el("p", { class: "duas-subtitle" }, "Arabic text with English translation, numbered as on sunnah.com"),
@@ -941,7 +959,7 @@ async function renderHadithBooks() {
   const grid = el("div", { class: "grid" });
   HADITH_BOOKS.forEach((b) => {
     grid.appendChild(
-      el("a", { class: "card", href: `#/hadith/${b.slug}` }, [
+      el("a", { class: "card", href: `/hadith/${b.slug}` }, [
         el("div", { class: "card-spine" }),
         el("div", { class: "card-body" }, [
           el("span", { class: "card-kicker" }, "Collection"),
@@ -963,9 +981,9 @@ async function renderHadithChapters(bookSlug) {
   });
   app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [
-    el("a", { href: "#/" }, "Library"),
+    el("a", { href: "/" }, "Library"),
     " / ",
-    el("a", { href: "#/hadith" }, "Hadith Collections"),
+    el("a", { href: "/hadith" }, "Hadith Collections"),
     ` / ${book ? book.name : bookSlug}`,
   ]);
   const heading = el("h1", { class: "page-title" }, book ? book.name : bookSlug);
@@ -976,7 +994,7 @@ async function renderHadithChapters(bookSlug) {
         book.shortDesc + " ",
         el(
           "a",
-          { href: `#/hadith-about/${bookSlug}`, target: "_blank", rel: "noopener" },
+          { href: `/hadith-about/${bookSlug}`, target: "_blank", rel: "noopener" },
           "More information \u2026"
         ),
       ])
@@ -988,7 +1006,7 @@ async function renderHadithChapters(bookSlug) {
         el("p", { class: "hadith-collection-extra-link" }, [
           el(
             "a",
-            { href: `#/hadith-about/${bookSlug}/${link.aboutSlug}`, target: "_blank", rel: "noopener" },
+            { href: `/hadith-about/${bookSlug}/${link.aboutSlug}`, target: "_blank", rel: "noopener" },
             link.label
           ),
         ])
@@ -1010,7 +1028,7 @@ async function renderHadithChapters(bookSlug) {
       .sort((a, b) => a - b)
       .forEach((n) => {
         grid.appendChild(
-          el("a", { class: "card", href: `#/hadith/${bookSlug}/${n}` }, [
+          el("a", { class: "card", href: `/hadith/${bookSlug}/${n}` }, [
             el("div", { class: "card-spine" }),
             el("div", { class: "card-body" }, [
               el("span", { class: "card-kicker" }, `Book ${n}`),
@@ -1035,13 +1053,13 @@ async function renderHadithAbout(bookSlug, aboutSlug) {
   app.innerHTML = "";
   const fileSlug = aboutSlug || bookSlug;
   const crumb = el("p", { class: "crumb" }, [
-    el("a", { href: "#/" }, "Library"),
+    el("a", { href: "/" }, "Library"),
     " / ",
-    el("a", { href: "#/hadith" }, "Hadith Collections"),
+    el("a", { href: "/hadith" }, "Hadith Collections"),
     " / ",
-    el("a", { href: `#/hadith/${bookSlug}` }, book ? book.name : bookSlug),
+    el("a", { href: `/hadith/${bookSlug}` }, book ? book.name : bookSlug),
     ...(aboutSlug
-      ? [" / ", el("a", { href: `#/hadith-about/${bookSlug}` }, "About"), " / Letter"]
+      ? [" / ", el("a", { href: `/hadith-about/${bookSlug}` }, "About"), " / Letter"]
       : [" / About"]),
   ]);
   const bodyWrap = el("div");
@@ -1083,11 +1101,11 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
   });
   app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [
-    el("a", { href: "#/" }, "Library"),
+    el("a", { href: "/" }, "Library"),
     " / ",
-    el("a", { href: "#/hadith" }, "Hadith Collections"),
+    el("a", { href: "/hadith" }, "Hadith Collections"),
     " / ",
-    el("a", { href: `#/hadith/${bookSlug}` }, book ? book.name : bookSlug),
+    el("a", { href: `/hadith/${bookSlug}` }, book ? book.name : bookSlug),
     ` / Book ${sectionNum}`,
   ]);
   const headingWrap = el("div", {}, [el("h1", { class: "page-title" }, `Loading\u2026`)]);
@@ -1110,7 +1128,7 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
     }
 
     function hadithUrl(hadithnumber) {
-      return `${window.location.origin}${window.location.pathname}#/hadith/${bookSlug}/${sectionNum}/h/${hadithnumber}`;
+      return `${window.location.origin}/hadith/${bookSlug}/${sectionNum}/h/${hadithnumber}`;
     }
 
     function hadithShareText(h) {
@@ -1241,7 +1259,7 @@ async function renderSearch(query) {
     description: "Search the Qur'an and Hadith collections on QuranAnyWhere.",
   });
   app.innerHTML = "";
-  const crumb = el("p", { class: "crumb" }, [el("a", { href: "#/" }, "Library"), " / Search"]);
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: "/" }, "Library"), " / Search"]);
 
   const form = el("form", { class: "search-form", id: "searchForm" }, [
     el("input", { class: "search-input", id: "searchInput", type: "search", value: query || "", placeholder: "Search the Qur'an and Hadith, or type a hadith number\u2026", autofocus: "true" }),
@@ -1255,7 +1273,7 @@ async function renderSearch(query) {
   document.getElementById("searchForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const q = document.getElementById("searchInput").value.trim();
-    if (q) window.location.hash = `#/search/${encodeURIComponent(q)}`;
+    if (q) navigate(`/search/${encodeURIComponent(q)}`);
   });
 
   if (!query) {
@@ -1301,7 +1319,7 @@ async function renderSearch(query) {
         const matchedUrdu = wordRegex.test(v.u);
         const snippet = snippetAround(matchedUrdu ? v.u : v.t, query, 60);
         resultsWrap.appendChild(
-          el("a", { class: "search-result", href: `#/quran-text/${v.j}/v/${v.s}/${v.a}` }, [
+          el("a", { class: "search-result", href: `/quran-text/${v.j}/v/${v.s}/${v.a}` }, [
             el("span", { class: "search-result-ref" }, `${SURAH_NAMES[v.s] || "Surah " + v.s} ${v.s}:${v.a} \u00b7 Juz ${v.j}`),
             el("p", { class: "search-result-snippet" }, snippet),
           ])
@@ -1314,7 +1332,7 @@ async function renderSearch(query) {
       hadithMatches.forEach((h) => {
         const snippet = isNumericQuery ? snippetAround(h.e, "", 90) : snippetAround(h.e, query, 70);
         resultsWrap.appendChild(
-          el("a", { class: "search-result", href: `#/hadith/${h.bk}/${h.sc}/h/${h.n}` }, [
+          el("a", { class: "search-result", href: `/hadith/${h.bk}/${h.sc}/h/${h.n}` }, [
             el(
               "span",
               { class: "search-result-ref" },
@@ -1340,8 +1358,8 @@ async function renderSearch(query) {
 
 function route() {
   stopHadithTicker();
-  const hash = window.location.hash.replace(/^#\/?/, "");
-  const parts = hash.split("/").filter(Boolean);
+  const path = window.location.pathname.replace(/^\/+/, "");
+  const parts = path.split("/").filter(Boolean);
 
   if (parts[0] === "search") {
     renderSearch(parts[1] ? decodeURIComponent(parts[1]) : "");
@@ -1374,5 +1392,28 @@ function route() {
   window.scrollTo(0, 0);
 }
 
-window.addEventListener("hashchange", route);
+// Navigate to a real path via the History API (no full page reload), then render it.
+function navigate(path) {
+  if (window.location.pathname !== path) {
+    history.pushState(null, "", path);
+  }
+  route();
+}
+
+// Intercept clicks on same-site links so navigation stays client-side (SPA
+// behavior) even though URLs are now real paths instead of "/..." hashes.
+// Links with target="_blank", external URLs, mailto:, or plain "#" (disabled
+// state) are left alone to behave normally.
+document.addEventListener("click", (e) => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest("a[href]");
+  if (!a) return;
+  const href = a.getAttribute("href");
+  if (!href || href === "#" || href.startsWith("http://") || href.startsWith("https://") || href.startsWith("mailto:")) return;
+  if (a.target === "_blank" || a.hasAttribute("download")) return;
+  e.preventDefault();
+  navigate(href);
+});
+
+window.addEventListener("popstate", route);
 window.addEventListener("DOMContentLoaded", route);
