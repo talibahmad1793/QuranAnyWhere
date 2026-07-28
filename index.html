@@ -2,17 +2,38 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Companion to 404.html's redirect trick. If we arrived here via that
+      redirect (URL will look like /?/hadith/bukhari), restore the real,
+      clean path (/hadith/bukhari) using the History API before anything
+      else runs, so the router (in app.js) sees the correct path on first
+      load and the address bar shows the pretty URL, not the encoded one.
+    -->
+    <script>
+      (function (l) {
+        if (l.search[1] === "/") {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .map(function (s) {
+              return s.replace(/~and~/g, "&");
+            })
+            .join("?");
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+        }
+      })(window.location);
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QuranAnyWhere — Read the Qur'an and Hadith Online, Free</title>
     <meta name="description" content="Read the Qur'an juz by juz and explore Hinglish translations of Sahih al-Bukhari, Sahih Muslim & more hadith collections — free, anywhere, on any device." />
     <link rel="canonical" href="https://www.quranaw.com/" />
     <meta name="robots" content="index, follow" />
 
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" type="image/x-icon" href="/QuranAnyWhere/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/QuranAnyWhere/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/QuranAnyWhere/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/QuranAnyWhere/apple-touch-icon.png" />
+    <link rel="manifest" href="/QuranAnyWhere/site.webmanifest" />
     <meta name="theme-color" content="#1b4b43" />
 
     <meta property="og:type" content="website" />
@@ -37,7 +58,7 @@
       "description": "Read the Qur'an juz by juz and explore Hinglish translations of major hadith collections online, free.",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://www.quranaw.com/#/search/{search_term_string}",
+        "target": "https://www.quranaw.com/search/{search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }
@@ -57,7 +78,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=10" />
+    <link rel="stylesheet" href="/QuranAnyWhere/style.css?v=11" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
       pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -67,13 +88,13 @@
   <body>
     <header class="site-header">
       <div class="container header-inner">
-        <a href="#/" class="brand">
+        <a href="/QuranAnyWhere/" class="brand">
           <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
             <path d="M13 2 L15.2 9.8 L23 12 L15.2 14.2 L13 22 L10.8 14.2 L3 12 L10.8 9.8 Z" fill="var(--gold)" />
           </svg>
           <span class="brand-text" data-site-title>QuranAnyWhere</span>
         </a>
-        <a href="#/search" class="header-search-link" aria-label="Search">
+        <a href="/QuranAnyWhere/search" class="header-search-link" aria-label="Search">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.6"/>
             <line x1="13" y1="13" x2="18" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -97,7 +118,7 @@
     <footer class="site-footer">
       <div class="container footer-top">
         <div class="footer-brand-col">
-          <a href="#/" class="footer-brand">
+          <a href="/QuranAnyWhere/" class="footer-brand">
             <span class="footer-logo">
               <svg width="22" height="22" viewBox="0 0 26 26" fill="none" aria-hidden="true">
                 <path d="M13 2 L15.2 9.8 L23 12 L15.2 14.2 L13 22 L10.8 14.2 L3 12 L10.8 9.8 Z" fill="var(--gold)" />
@@ -132,10 +153,10 @@
         <nav class="footer-col" aria-label="Quran links">
           <h3 class="footer-col-title">Quran</h3>
           <ul>
-            <li><a href="#/quran-text/1">Read Quran</a></li>
+            <li><a href="/QuranAnyWhere/quran-text/1">Read Quran</a></li>
             <li><span class="footer-link-soon" title="Coming soon">Surahs</span></li>
-            <li><a href="#/quran-text/1">Juz / Para</a></li>
-            <li><a href="#/quran-text/1">Translation</a></li>
+            <li><a href="/QuranAnyWhere/quran-text/1">Juz / Para</a></li>
+            <li><a href="/QuranAnyWhere/quran-text/1">Translation</a></li>
             <li><span class="footer-link-soon" title="Coming soon">Tafsir</span></li>
           </ul>
         </nav>
@@ -143,12 +164,12 @@
         <nav class="footer-col" aria-label="Hadith links">
           <h3 class="footer-col-title">Hadith</h3>
           <ul>
-            <li><a href="#/hadith/bukhari">Sahih Bukhari</a></li>
-            <li><a href="#/hadith/muslim">Sahih Muslim</a></li>
-            <li><a href="#/hadith/tirmidhi">Jami' Tirmidhi</a></li>
-            <li><a href="#/hadith/abudawud">Sunan Abu Dawud</a></li>
-            <li><a href="#/hadith/ibnmajah">Sunan Ibn Majah</a></li>
-            <li><a href="#/hadith">More Books</a></li>
+            <li><a href="/QuranAnyWhere/hadith/bukhari">Sahih Bukhari</a></li>
+            <li><a href="/QuranAnyWhere/hadith/muslim">Sahih Muslim</a></li>
+            <li><a href="/QuranAnyWhere/hadith/tirmidhi">Jami' Tirmidhi</a></li>
+            <li><a href="/QuranAnyWhere/hadith/abudawud">Sunan Abu Dawud</a></li>
+            <li><a href="/QuranAnyWhere/hadith/ibnmajah">Sunan Ibn Majah</a></li>
+            <li><a href="/QuranAnyWhere/hadith">More Books</a></li>
           </ul>
         </nav>
 
@@ -156,7 +177,7 @@
           <h3 class="footer-col-title">Learn</h3>
           <ul>
             <li><span class="footer-link-soon" title="Coming soon">Daily Verse</span></li>
-            <li><a href="#/duas">Dua &amp; Azkar</a></li>
+            <li><a href="/QuranAnyWhere/duas">Dua &amp; Azkar</a></li>
             <li><span class="footer-link-soon" title="Coming soon">Islamic Articles</span></li>
             <li><span class="footer-link-soon" title="Coming soon">Prayer Times</span></li>
             <li><span class="footer-link-soon" title="Coming soon">Islamic Calendar</span></li>
@@ -179,7 +200,7 @@
         <div class="footer-support-box">
           <h3 class="footer-col-title">Support QuranAW</h3>
           <p>QuranAW is your trusted platform to read the Holy Quran and authentic Hadiths with multiple translations. Your support helps us spread the message of Quran &amp; Sunnah.</p>
-          <a href="#/donate" class="btn btn-primary footer-donate-btn">Donate Now</a>
+          <a href="/QuranAnyWhere/donate" class="btn btn-primary footer-donate-btn">Donate Now</a>
           <p class="footer-secure">Secure Payments</p>
         </div>
         -->
@@ -191,8 +212,8 @@
       </div>
     </footer>
 
-    <script src="config.js?v=10"></script>
-    <script src="app.js?v=10"></script>
+    <script src="/QuranAnyWhere/config.js?v=11"></script>
+    <script src="/QuranAnyWhere/app.js?v=11"></script>
     <script>
       document.querySelectorAll("[data-year]").forEach((el) => {
         el.textContent = new Date().getFullYear();

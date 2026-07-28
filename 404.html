@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuranAnyWhere</title>
+    <!--
+      GitHub Pages has no real server, so a direct visit to a "real" path
+      like /QuranAnyWhere/hadith/bukhari (rather than the old
+      /QuranAnyWhere/#/hadith/bukhari) results in GitHub serving this
+      404.html file instead (since no such file exists on disk). This script
+      encodes the requested path into a query string and redirects to the
+      site root, where a small decoder script in index.html (see below)
+      restores the original path via the History API before the app
+      renders. This is the standard, widely-used "spa-github-pages"
+      technique — https://github.com/rafgraph/spa-github-pages
+
+      UAT-SPECIFIC: this deploys as a GitHub Pages *project* site under
+      /QuranAnyWhere/, not at the domain root like the live site
+      (www.quranaw.com). pathSegmentsToKeep=1 keeps that first "QuranAnyWhere"
+      path segment intact through the redirect. If this repo is ever moved
+      to its own custom domain/root, change this back to 0 (see the live
+      site's 404.html for that version).
+    -->
+    <script>
+      var pathSegmentsToKeep = 1;
+      var l = window.location;
+      l.replace(
+        l.protocol + "//" + l.hostname + (l.port ? ":" + l.port : "") +
+        l.pathname.split("/").slice(0, 1 + pathSegmentsToKeep).join("/") + "/?/" +
+        l.pathname.slice(1).split("/").slice(pathSegmentsToKeep).join("/").replace(/&/g, "~and~") +
+        (l.search ? "&" + l.search.slice(1).replace(/&/g, "~and~") : "") +
+        l.hash
+      );
+    </script>
+  </head>
+  <body></body>
+</html>
