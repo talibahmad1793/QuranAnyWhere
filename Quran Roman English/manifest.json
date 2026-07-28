@@ -1,0 +1,458 @@
+[
+  {
+    "name": "001-Al-Fatihah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "002-Al-Baqarah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "003-Aal-e-Imran.pdf",
+    "type": "file"
+  },
+  {
+    "name": "004-An-Nisa.pdf",
+    "type": "file"
+  },
+  {
+    "name": "005-Al-Maidah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "006-Al-Anam.pdf",
+    "type": "file"
+  },
+  {
+    "name": "007-Al-Araf.pdf",
+    "type": "file"
+  },
+  {
+    "name": "008-Al-Anfal.pdf",
+    "type": "file"
+  },
+  {
+    "name": "009-At-Tawbah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "010-Yunus.pdf",
+    "type": "file"
+  },
+  {
+    "name": "011-Hud.pdf",
+    "type": "file"
+  },
+  {
+    "name": "012-Yusuf.pdf",
+    "type": "file"
+  },
+  {
+    "name": "013-Ar-Rad.pdf",
+    "type": "file"
+  },
+  {
+    "name": "014-Ibrahim.pdf",
+    "type": "file"
+  },
+  {
+    "name": "015-Al-Hijr.pdf",
+    "type": "file"
+  },
+  {
+    "name": "016-An-Nahl.pdf",
+    "type": "file"
+  },
+  {
+    "name": "017-Al-Isra.pdf",
+    "type": "file"
+  },
+  {
+    "name": "018-Al-Kahf.pdf",
+    "type": "file"
+  },
+  {
+    "name": "019-Maryam.pdf",
+    "type": "file"
+  },
+  {
+    "name": "020-Ta-Ha.pdf",
+    "type": "file"
+  },
+  {
+    "name": "021-Al-Anbiya.pdf",
+    "type": "file"
+  },
+  {
+    "name": "022-Al-Hajj.pdf",
+    "type": "file"
+  },
+  {
+    "name": "023-Al-Muminun.pdf",
+    "type": "file"
+  },
+  {
+    "name": "024-An-Nur.pdf",
+    "type": "file"
+  },
+  {
+    "name": "025-Al-Furqan.pdf",
+    "type": "file"
+  },
+  {
+    "name": "026-Ash-Shuara.pdf",
+    "type": "file"
+  },
+  {
+    "name": "027-An-Naml.pdf",
+    "type": "file"
+  },
+  {
+    "name": "028-Al-Qasas.pdf",
+    "type": "file"
+  },
+  {
+    "name": "029-Al-Ankabut.pdf",
+    "type": "file"
+  },
+  {
+    "name": "030-Ar-Rum.pdf",
+    "type": "file"
+  },
+  {
+    "name": "031-Luqman.pdf",
+    "type": "file"
+  },
+  {
+    "name": "032-As-Sajdah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "033-Al-Ahzab.pdf",
+    "type": "file"
+  },
+  {
+    "name": "034-Saba.pdf",
+    "type": "file"
+  },
+  {
+    "name": "035-Fatir.pdf",
+    "type": "file"
+  },
+  {
+    "name": "036-Ya-Sin.pdf",
+    "type": "file"
+  },
+  {
+    "name": "037-As-Saffat.pdf",
+    "type": "file"
+  },
+  {
+    "name": "038-Sad.pdf",
+    "type": "file"
+  },
+  {
+    "name": "039-Az-Zumar.pdf",
+    "type": "file"
+  },
+  {
+    "name": "040-Ghafir.pdf",
+    "type": "file"
+  },
+  {
+    "name": "041-Fussilat.pdf",
+    "type": "file"
+  },
+  {
+    "name": "042-Ash-Shuraa.pdf",
+    "type": "file"
+  },
+  {
+    "name": "043-Az-Zukhruf.pdf",
+    "type": "file"
+  },
+  {
+    "name": "044-Ad-Dukhan.pdf",
+    "type": "file"
+  },
+  {
+    "name": "045-Al-Jathiyah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "046-Al-Ahqaf.pdf",
+    "type": "file"
+  },
+  {
+    "name": "047-Muhammad.pdf",
+    "type": "file"
+  },
+  {
+    "name": "048-Al-Fath.pdf",
+    "type": "file"
+  },
+  {
+    "name": "049-Al-Hujurat.pdf",
+    "type": "file"
+  },
+  {
+    "name": "050-Qaf.pdf",
+    "type": "file"
+  },
+  {
+    "name": "051-Adh-Dhariyat.pdf",
+    "type": "file"
+  },
+  {
+    "name": "052-At-Tur.pdf",
+    "type": "file"
+  },
+  {
+    "name": "053-An-Najm.pdf",
+    "type": "file"
+  },
+  {
+    "name": "054-Al-Qamar.pdf",
+    "type": "file"
+  },
+  {
+    "name": "055-Ar-Rahman.pdf",
+    "type": "file"
+  },
+  {
+    "name": "056-Al-Waqiah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "057-Al-Hadid.pdf",
+    "type": "file"
+  },
+  {
+    "name": "058-Al-Mujadila.pdf",
+    "type": "file"
+  },
+  {
+    "name": "059-Al-Hashr.pdf",
+    "type": "file"
+  },
+  {
+    "name": "060-Al-Mumtahanah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "061-As-Saff.pdf",
+    "type": "file"
+  },
+  {
+    "name": "062-Al-Jumuah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "063-Al-Munafiqun.pdf",
+    "type": "file"
+  },
+  {
+    "name": "064-At-Taghabun.pdf",
+    "type": "file"
+  },
+  {
+    "name": "065-At-Talaq.pdf",
+    "type": "file"
+  },
+  {
+    "name": "066-At-Tahrim.pdf",
+    "type": "file"
+  },
+  {
+    "name": "067-Al-Mulk.pdf",
+    "type": "file"
+  },
+  {
+    "name": "068-Al-Qalam.pdf",
+    "type": "file"
+  },
+  {
+    "name": "069-Al-Haqqah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "070-Al-Maarij.pdf",
+    "type": "file"
+  },
+  {
+    "name": "071-Nuh.pdf",
+    "type": "file"
+  },
+  {
+    "name": "072-Al-Jinn.pdf",
+    "type": "file"
+  },
+  {
+    "name": "073-Al-Muzzammil.pdf",
+    "type": "file"
+  },
+  {
+    "name": "074-Al-Muddaththir.pdf",
+    "type": "file"
+  },
+  {
+    "name": "075-Al-Qiyamah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "076-Al-Insan.pdf",
+    "type": "file"
+  },
+  {
+    "name": "077-Al-Mursalat.pdf",
+    "type": "file"
+  },
+  {
+    "name": "078-An-Naba.pdf",
+    "type": "file"
+  },
+  {
+    "name": "079-An-Naziat.pdf",
+    "type": "file"
+  },
+  {
+    "name": "080-Abasa.pdf",
+    "type": "file"
+  },
+  {
+    "name": "081-At-Takwir.pdf",
+    "type": "file"
+  },
+  {
+    "name": "082-Al-Infitar.pdf",
+    "type": "file"
+  },
+  {
+    "name": "083-Al-Mutaffifin.pdf",
+    "type": "file"
+  },
+  {
+    "name": "084-Al-Inshiqaq.pdf",
+    "type": "file"
+  },
+  {
+    "name": "085-Al-Buruj.pdf",
+    "type": "file"
+  },
+  {
+    "name": "086-At-Tariq.pdf",
+    "type": "file"
+  },
+  {
+    "name": "087-Al-Ala.pdf",
+    "type": "file"
+  },
+  {
+    "name": "088-Al-Ghashiyah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "089-Al-Fajr.pdf",
+    "type": "file"
+  },
+  {
+    "name": "090-Al-Balad.pdf",
+    "type": "file"
+  },
+  {
+    "name": "091-Ash-Shams.pdf",
+    "type": "file"
+  },
+  {
+    "name": "092-Al-Lail.pdf",
+    "type": "file"
+  },
+  {
+    "name": "093-Ad-Duhaa.pdf",
+    "type": "file"
+  },
+  {
+    "name": "094-Ash-Sharh.pdf",
+    "type": "file"
+  },
+  {
+    "name": "095-At-Tin.pdf",
+    "type": "file"
+  },
+  {
+    "name": "096-Al-Alaq.pdf",
+    "type": "file"
+  },
+  {
+    "name": "097-Al-Qadr.pdf",
+    "type": "file"
+  },
+  {
+    "name": "098-Al-Bayyinah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "099-Az-Zalzalah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "100-Al-Adiyat.pdf",
+    "type": "file"
+  },
+  {
+    "name": "101-Al-Qariah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "102-At-Takathur.pdf",
+    "type": "file"
+  },
+  {
+    "name": "103-Al-Asr.pdf",
+    "type": "file"
+  },
+  {
+    "name": "104-Al-Humazah.pdf",
+    "type": "file"
+  },
+  {
+    "name": "105-Al-Fil.pdf",
+    "type": "file"
+  },
+  {
+    "name": "106-Quraish.pdf",
+    "type": "file"
+  },
+  {
+    "name": "107-Al-Maun.pdf",
+    "type": "file"
+  },
+  {
+    "name": "108-Al-Kawthar.pdf",
+    "type": "file"
+  },
+  {
+    "name": "109-Al-Kafirun.pdf",
+    "type": "file"
+  },
+  {
+    "name": "110-An-Nasr.pdf",
+    "type": "file"
+  },
+  {
+    "name": "111-Al-Masad.pdf",
+    "type": "file"
+  },
+  {
+    "name": "112-Al-Ikhlas.pdf",
+    "type": "file"
+  },
+  {
+    "name": "113-Al-Falaq.pdf",
+    "type": "file"
+  },
+  {
+    "name": "114-An-Nas.pdf",
+    "type": "file"
+  }
+]
