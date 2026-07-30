@@ -1103,7 +1103,7 @@ async function renderHadithChapters(bookSlug) {
     const grid = el("div", { class: "grid" });
     Object.keys(sections)
       .map(Number)
-      .filter((n) => n > 0 && sections[n])
+      .filter((n) => sections[n])
       .sort((a, b) => a - b)
       .forEach((n) => {
         grid.appendChild(
