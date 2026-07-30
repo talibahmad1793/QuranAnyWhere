@@ -1110,7 +1110,7 @@ async function renderHadithChapters(bookSlug) {
           el("a", { class: "card", href: `${BASE_PATH}/hadith/${bookSlug}/${n}` }, [
             el("div", { class: "card-spine" }),
             el("div", { class: "card-body" }, [
-              el("span", { class: "card-kicker" }, `Book ${n}`),
+              el("span", { class: "card-kicker" }, n === 0 ? "Introduction" : `Book ${n}`),
               el("h2", { class: "card-title hadith-chapter-title" }, sections[n]),
             ]),
           ])
