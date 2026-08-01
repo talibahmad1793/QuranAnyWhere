@@ -293,6 +293,67 @@ function partHref(bookSlug, fileName, page) {
   return page && page > 1 ? `${base}/page/${page}` : base;
 }
 
+// --- Favorite hadith (kept in the visitor's own browser only, like reading
+// progress above). We only store the identity (which book/section/hadith),
+// not the hadith text itself - the Favorites page re-loads the real hadith
+// data via loadHadithBook() so it always shows current text/translations,
+// and never drifts out of sync if a hadith gets corrected later.
+const FAVORITES_KEY = "qaw:favorites";
+
+function favoriteId(bookSlug, sectionNum, hadithnumber) {
+  return `${bookSlug}:${sectionNum}:${hadithnumber}`;
+}
+
+function getFavorites() {
+  try {
+    const raw = localStorage.getItem(FAVORITES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveFavorites(list) {
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+  } catch (e) {
+    // Storage may be unavailable (private browsing etc) - fine to skip.
+  }
+}
+
+function isFavorited(bookSlug, sectionNum, hadithnumber) {
+  const id = favoriteId(bookSlug, sectionNum, hadithnumber);
+  return getFavorites().some((f) => f.id === id);
+}
+
+// Adds/removes a favorite and returns the new state (true = now favorited).
+// `meta` carries just enough to render the Favorites list index quickly
+// (book name, chapter name) without a full data fetch on that page.
+function toggleFavorite(bookSlug, sectionNum, hadithnumber, meta) {
+  const id = favoriteId(bookSlug, sectionNum, hadithnumber);
+  const list = getFavorites();
+  const idx = list.findIndex((f) => f.id === id);
+  if (idx >= 0) {
+    list.splice(idx, 1);
+    saveFavorites(list);
+    updateFavoritesBadge();
+    return false;
+  }
+  list.unshift({ id, bookSlug, sectionNum, hadithnumber, ...meta, savedAt: Date.now() });
+  saveFavorites(list);
+  updateFavoritesBadge();
+  return true;
+}
+
+// Keeps the little count badge in the header nav in sync with storage.
+function updateFavoritesBadge() {
+  const badge = document.getElementById("headerFavCount");
+  if (!badge) return;
+  const count = getFavorites().length;
+  badge.textContent = count > 0 ? String(count) : "";
+  badge.style.display = count > 0 ? "" : "none";
+}
+
 async function renderHome() {
   setMeta({
     full: "QuranAnyWhere — Read the Qur'an and Hadith Online, Free",
@@ -1172,6 +1233,133 @@ async function renderHadithAbout(bookSlug, aboutSlug) {
   }
 }
 
+const HEART_ICON_PATH =
+  'M10 17.3s-6.1-3.8-8.1-7.5C.5 7 1.6 4 4.5 3.3c1.7-.4 3.3.2 4.2 1.6.9-1.4 2.5-2 4.2-1.6 2.9.7 4 3.7 2.6 6.5-2 3.7-8.1 7.5-8.1 7.5z';
+
+// Shared by renderHadithList() and renderFavorites() so a hadith card looks
+// and behaves identically everywhere it appears - including the heart
+// button's favorited/red state staying in sync across both pages.
+function buildHadithCard(h, ctx) {
+  // ctx: { bookSlug, bookName, sectionNum, chapterName }
+  const { bookSlug, bookName, sectionNum, chapterName } = ctx;
+
+  function hadithUrl() {
+    return `${window.location.origin}${BASE_PATH}/hadith/${bookSlug}/${sectionNum}/h/${h.hadithnumber}`;
+  }
+
+  function hadithShareText() {
+    const lines = [h.arabic, "", h.english];
+    if (h.hinglish) lines.push("", h.hinglish);
+    lines.push("", `${bookName} ${h.hadithnumber}`, `Book ${sectionNum}: ${chapterName}, Hadith ${h.inBookNumber}`, hadithUrl());
+    return lines.join("\n");
+  }
+
+  function socialLinksRow() {
+    const url = hadithUrl();
+    const shortText = `${bookName} ${h.hadithnumber}`;
+    const targets = [
+      { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(hadithShareText())}` },
+      { label: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shortText)}` },
+      { label: "Twitter/X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText)}&url=${encodeURIComponent(url)}` },
+      { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+    ];
+    return el(
+      "div",
+      { class: "social-row" },
+      targets.map((t) => el("a", { class: "social-link", href: t.href, target: "_blank", rel: "noopener noreferrer" }, t.label))
+    );
+  }
+
+  // ♡ Favorite - filled red when saved, click toggles and (re)persists to
+  // localStorage. `onUnfavorite` lets the Favorites page remove the card
+  // from view immediately instead of waiting for a full re-render.
+  const favIcon = el("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 20 20",
+    fill: isFavorited(bookSlug, sectionNum, h.hadithnumber) ? "currentColor" : "none",
+    stroke: "currentColor",
+    "stroke-width": "1.6",
+    "aria-hidden": "true",
+    html: `<path d="${HEART_ICON_PATH}" stroke-linejoin="round"/>`,
+  });
+  const favBtn = el(
+    "button",
+    {
+      class: `fav-btn${isFavorited(bookSlug, sectionNum, h.hadithnumber) ? " is-active" : ""}`,
+      type: "button",
+      "aria-label": "Favorite this hadith",
+      "aria-pressed": String(isFavorited(bookSlug, sectionNum, h.hadithnumber)),
+    },
+    [favIcon, el("span", {}, "Favorite")]
+  );
+  favBtn.addEventListener("click", () => {
+    const nowFavorited = toggleFavorite(bookSlug, sectionNum, h.hadithnumber, {
+      bookName,
+      chapterName,
+      inBookNumber: h.inBookNumber,
+    });
+    favBtn.classList.toggle("is-active", nowFavorited);
+    favBtn.setAttribute("aria-pressed", String(nowFavorited));
+    favIcon.setAttribute("fill", nowFavorited ? "currentColor" : "none");
+    if (!nowFavorited && ctx.onUnfavorite) ctx.onUnfavorite(card);
+  });
+
+  const copyBtn = el("button", { class: "share-link", type: "button" }, "Copy");
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(hadithShareText());
+      copyBtn.textContent = "Copied!";
+    } catch (err) {
+      copyBtn.textContent = "Couldn't copy";
+    }
+    setTimeout(() => (copyBtn.textContent = "Copy"), 1800);
+  });
+
+  const social = socialLinksRow();
+  social.style.display = "none";
+
+  const shareBtn = el("button", { class: "share-link", type: "button" }, "Share");
+  shareBtn.addEventListener("click", async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${bookName} ${h.hadithnumber}`, text: hadithShareText(), url: hadithUrl() });
+      } catch (err) {
+        // User cancelled the native share sheet, or it failed silently - no action needed.
+      }
+    } else {
+      social.style.display = social.style.display === "none" ? "flex" : "none";
+    }
+  });
+
+  const shareRow = el("div", { class: "share-row" }, [
+    favBtn,
+    el("span", { class: "share-sep" }, "|"),
+    shareBtn,
+    el("span", { class: "share-sep" }, "|"),
+    copyBtn,
+  ]);
+
+  const reportBtn = el("button", { class: "report-link", type: "button" }, [
+    el("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", html: '<path d="M8 1.5 14.5 13.5H1.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.2v3.3M8 11.6h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>' }),
+    el("span", {}, "Report issue"),
+  ]);
+  reportBtn.addEventListener("click", () => {
+    openReportModal(`${bookName} ${h.hadithnumber} \u00b7 Book ${sectionNum}, Hadith ${h.inBookNumber}`);
+  });
+
+  const card = el("div", { class: "dua-card", id: `h-${h.hadithnumber}` }, [
+    el("div", { class: "verse-arabic dua-arabic" }, h.arabic),
+    el("p", { class: "verse-urdu dua-translation" }, h.english),
+    ...(h.hinglish ? [el("p", { class: "verse-translit hadith-hinglish" }, h.hinglish)] : []),
+    el("p", { class: "dua-reference" }, `${bookName} ${h.hadithnumber} \u00b7 Book ${sectionNum}, Hadith ${h.inBookNumber}`),
+    shareRow,
+    reportBtn,
+    social,
+  ]);
+  return card;
+}
+
 async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
   const book = HADITH_BOOKS.find((b) => b.slug === bookSlug);
   setMeta({
@@ -1206,94 +1394,11 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
       return;
     }
 
-    function hadithUrl(hadithnumber) {
-      return `${window.location.origin}${BASE_PATH}/hadith/${bookSlug}/${sectionNum}/h/${hadithnumber}`;
-    }
-
-    function hadithShareText(h) {
-      const bookName = book ? book.name : bookSlug;
-      const chapterName = sections[sectionNum] || "";
-      const lines = [h.arabic, "", h.english];
-      if (h.hinglish) lines.push("", h.hinglish);
-      lines.push("", `${bookName} ${h.hadithnumber}`, `Book ${sectionNum}: ${chapterName}, Hadith ${h.inBookNumber}`, hadithUrl(h.hadithnumber));
-      return lines.join("\n");
-    }
-
-    function socialLinksRow(h) {
-      const bookName = book ? book.name : bookSlug;
-      const url = hadithUrl(h.hadithnumber);
-      const shortText = `${bookName} ${h.hadithnumber}`;
-      const targets = [
-        { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(hadithShareText(h))}` },
-        { label: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shortText)}` },
-        { label: "Twitter/X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shortText)}&url=${encodeURIComponent(url)}` },
-        { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
-      ];
-      return el(
-        "div",
-        { class: "social-row" },
-        targets.map((t) => el("a", { class: "social-link", href: t.href, target: "_blank", rel: "noopener noreferrer" }, t.label))
-      );
-    }
+    const bookName = book ? book.name : bookSlug;
+    const chapterName = sections[sectionNum] || "";
 
     hadiths.forEach((h) => {
-      const copyBtn = el("button", { class: "share-link", type: "button" }, "Copy");
-      copyBtn.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(hadithShareText(h));
-          copyBtn.textContent = "Copied!";
-        } catch (err) {
-          copyBtn.textContent = "Couldn't copy";
-        }
-        setTimeout(() => (copyBtn.textContent = "Copy"), 1800);
-      });
-
-      const social = socialLinksRow(h);
-      social.style.display = "none";
-
-      const shareBtn = el("button", { class: "share-link", type: "button" }, "Share");
-      shareBtn.addEventListener("click", async () => {
-        const bookName = book ? book.name : bookSlug;
-        if (navigator.share) {
-          try {
-            await navigator.share({
-              title: `${bookName} ${h.hadithnumber}`,
-              text: hadithShareText(h),
-              url: hadithUrl(h.hadithnumber),
-            });
-          } catch (err) {
-            // User cancelled the native share sheet, or it failed silently - no action needed.
-          }
-        } else {
-          social.style.display = social.style.display === "none" ? "flex" : "none";
-        }
-      });
-
-      const shareRow = el("div", { class: "share-row" }, [shareBtn, el("span", { class: "share-sep" }, "|"), copyBtn]);
-
-      const reportBtn = el("button", { class: "report-link", type: "button" }, [
-        el("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", html: '<path d="M8 1.5 14.5 13.5H1.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.2v3.3M8 11.6h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>' }),
-        el("span", {}, "Report issue"),
-      ]);
-      reportBtn.addEventListener("click", () => {
-        const bookName = book ? book.name : bookSlug;
-        openReportModal(`${bookName} ${h.hadithnumber} \u00b7 Book ${sectionNum}, Hadith ${h.inBookNumber}`);
-      });
-
-      const card = el("div", { class: "dua-card", id: `h-${h.hadithnumber}` }, [
-        el("div", { class: "verse-arabic dua-arabic" }, h.arabic),
-        el("p", { class: "verse-urdu dua-translation" }, h.english),
-        ...(h.hinglish ? [el("p", { class: "verse-translit hadith-hinglish" }, h.hinglish)] : []),
-        el(
-          "p",
-          { class: "dua-reference" },
-          `${book ? book.name : bookSlug} ${h.hadithnumber} \u00b7 Book ${sectionNum}, Hadith ${h.inBookNumber}`
-        ),
-        shareRow,
-        reportBtn,
-        social,
-      ]);
-      listWrap.appendChild(card);
+      listWrap.appendChild(buildHadithCard(h, { bookSlug, bookName, sectionNum, chapterName }));
     });
 
     if (scrollTarget) {
@@ -1303,6 +1408,92 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
         target.classList.add("search-highlight");
         setTimeout(() => target.classList.remove("search-highlight"), 2500);
       }
+    }
+  } catch (e) {
+    listWrap.innerHTML = "";
+    renderError(listWrap, e.message);
+  }
+}
+
+// --- Favorites page: shows every hadith the visitor has hearted, newest
+// first, re-loading the real text from each collection's JSON so it's
+// always current rather than a stale snapshot.
+async function renderFavorites() {
+  setMeta({
+    full: `Your Favorite Hadith | ${cfg.siteTitle}`,
+    description: "Hadith you've favorited on QuranAnyWhere, saved right in this browser.",
+  });
+  app.innerHTML = "";
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: `${BASE_PATH}/` }, "Library"), " / \u2661 Favorites"]);
+  const listWrap = el("div");
+  const wrap = el("div", { class: "container text-container" }, [
+    crumb,
+    el("h1", { class: "page-title" }, "\u2661 Your Favorites"),
+    listWrap,
+  ]);
+  app.appendChild(el("main", {}, wrap));
+
+  const favorites = getFavorites();
+  if (favorites.length === 0) {
+    listWrap.appendChild(
+      el("div", { class: "empty-favorites" }, [
+        el("p", { class: "state-msg" }, "No favorites yet."),
+        el("p", { class: "state-msg" }, [
+          "Tap the ",
+          el("span", { class: "empty-favorites-heart" }, "\u2661"),
+          " on any hadith to save it here.",
+        ]),
+        el("a", { class: "btn btn-primary", href: `${BASE_PATH}/hadith` }, "Browse Hadith Collections"),
+      ])
+    );
+    return;
+  }
+
+  renderLoading(listWrap);
+
+  try {
+    const uniqueSlugs = [...new Set(favorites.map((f) => f.bookSlug))];
+    const loaded = {};
+    await Promise.all(
+      uniqueSlugs.map(async (slug) => {
+        try {
+          loaded[slug] = await loadHadithBook(slug);
+        } catch (e) {
+          loaded[slug] = null; // that collection's data failed to load - skip its favorites below
+        }
+      })
+    );
+
+    listWrap.innerHTML = "";
+    let shown = 0;
+
+    favorites.forEach((f) => {
+      const bookData = loaded[f.bookSlug];
+      const h = bookData && bookData.hadithsByBook[f.sectionNum]
+        ? bookData.hadithsByBook[f.sectionNum].find((x) => x.hadithnumber === f.hadithnumber)
+        : null;
+      if (!h) return; // hadith no longer exists at that address - skip silently
+
+      const book = HADITH_BOOKS.find((b) => b.slug === f.bookSlug);
+      const bookName = book ? book.name : f.bookSlug;
+      const chapterName = (bookData.sections && bookData.sections[f.sectionNum]) || f.chapterName || "";
+
+      const card = buildHadithCard(h, {
+        bookSlug: f.bookSlug,
+        bookName,
+        sectionNum: f.sectionNum,
+        chapterName,
+        onUnfavorite: (cardEl) => {
+          cardEl.remove();
+          if (listWrap.children.length === 0) renderFavorites();
+        },
+      });
+      listWrap.appendChild(card);
+      shown++;
+    });
+
+    if (shown === 0) {
+      listWrap.appendChild(el("p", { class: "state-msg" }, "Couldn't load your favorites right now \u2014 try refreshing."));
     }
   } catch (e) {
     listWrap.innerHTML = "";
@@ -1444,6 +1635,8 @@ function route() {
 
   if (parts[0] === "search") {
     renderSearch(parts[1] ? decodeURIComponent(parts[1]) : "");
+  } else if (parts[0] === "favorites") {
+    renderFavorites();
   } else if (parts[0] === "hadith-about" && parts[1] && parts[2]) {
     renderHadithAbout(decodeURIComponent(parts[1]), decodeURIComponent(parts[2]));
   } else if (parts[0] === "hadith-about" && parts[1]) {
@@ -1497,4 +1690,7 @@ document.addEventListener("click", (e) => {
 });
 
 window.addEventListener("popstate", route);
-window.addEventListener("DOMContentLoaded", route);
+window.addEventListener("DOMContentLoaded", () => {
+  updateFavoritesBadge();
+  route();
+});
