@@ -192,6 +192,18 @@ function renderLoading(target) {
   target.appendChild(el("div", { class: "spinner" }));
 }
 
+// document.createElement("svg") does NOT create a real, namespaced SVG
+// element - it silently produces an inert HTMLUnknownElement, so anything
+// built that way (or with el("svg", ...)) never renders, even though it
+// looks correct in markup. Setting innerHTML on a plain wrapper does parse
+// real SVG correctly (the HTML parser switches into foreign-content/SVG
+// mode when it sees a literal "<svg>" tag), so build icons that way instead.
+function svgIcon(svgMarkup) {
+  const wrap = document.createElement("span");
+  wrap.innerHTML = svgMarkup.trim();
+  return wrap.firstElementChild;
+}
+
 function renderError(target, message) {
   target.appendChild(el("p", { class: "state-msg error" }, message));
 }
@@ -1273,16 +1285,10 @@ function buildHadithCard(h, ctx) {
   // ♡ Favorite - filled red when saved, click toggles and (re)persists to
   // localStorage. `onUnfavorite` lets the Favorites page remove the card
   // from view immediately instead of waiting for a full re-render.
-  const favIcon = el("svg", {
-    width: "16",
-    height: "16",
-    viewBox: "0 0 20 20",
-    fill: isFavorited(bookSlug, sectionNum, h.hadithnumber) ? "currentColor" : "none",
-    stroke: "currentColor",
-    "stroke-width": "1.6",
-    "aria-hidden": "true",
-    html: `<path d="${HEART_ICON_PATH}" stroke-linejoin="round"/>`,
-  });
+  function heartMarkup(filled) {
+    return `<svg width="16" height="16" viewBox="0 0 20 20" fill="${filled ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="${HEART_ICON_PATH}" stroke-linejoin="round"/></svg>`;
+  }
+  const favIcon = svgIcon(heartMarkup(isFavorited(bookSlug, sectionNum, h.hadithnumber)));
   const favBtn = el(
     "button",
     {
@@ -1341,7 +1347,7 @@ function buildHadithCard(h, ctx) {
   ]);
 
   const reportBtn = el("button", { class: "report-link", type: "button" }, [
-    el("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", html: '<path d="M8 1.5 14.5 13.5H1.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.2v3.3M8 11.6h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>' }),
+    svgIcon('<svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5 14.5 13.5H1.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.2v3.3M8 11.6h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'),
     el("span", {}, "Report issue"),
   ]);
   reportBtn.addEventListener("click", () => {
