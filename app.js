@@ -1581,7 +1581,7 @@ async function renderSearch(query) {
       wordRegex = new RegExp(`\\b${escaped}\\b`, "i");
 
       quranMatches = quran.filter((v) => wordRegex.test(v.t) || wordRegex.test(v.u)).slice(0, 40);
-      hadithMatches = hadith.filter((h) => wordRegex.test(h.e)).slice(0, 40);
+      hadithMatches = hadith.filter((h) => wordRegex.test(h.e) || (h.hi && wordRegex.test(h.hi))).slice(0, 40);
     }
 
     resultsWrap.innerHTML = "";
@@ -1606,7 +1606,9 @@ async function renderSearch(query) {
     if (hadithMatches.length > 0) {
       resultsWrap.appendChild(el("h2", { class: "search-section-title" }, "Hadith"));
       hadithMatches.forEach((h) => {
-        const snippet = isNumericQuery ? snippetAround(h.e, "", 90) : snippetAround(h.e, query, 70);
+        const matchedHi = !isNumericQuery && h.hi && wordRegex.test(h.hi);
+        const snippetSource = matchedHi ? h.hi : h.e;
+        const snippet = isNumericQuery ? snippetAround(h.e, "", 90) : snippetAround(snippetSource, query, 70);
         resultsWrap.appendChild(
           el("a", { class: "search-result", href: `${BASE_PATH}/hadith/${h.bk}/${h.sc}/h/${h.n}` }, [
             el(
