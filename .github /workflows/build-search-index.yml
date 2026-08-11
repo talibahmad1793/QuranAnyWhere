@@ -1,0 +1,44 @@
+name: Rebuild Hadith Search Index
+
+# Runs automatically whenever ANY root-level JSON file changes on main —
+# this is intentionally broad so a brand-new hadith book (e.g. a future
+# abudawud.json) triggers a rebuild too, with no workflow edit needed.
+# The script itself (build-hadith-index.js) safely ignores any JSON file
+# that isn't actually a hadith book (e.g. quran-data, duas, package.json).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "*.json"
+      - "scripts/build-hadith-index.js"
+  workflow_dispatch: {} # lets you also trigger it manually from the Actions tab
+
+permissions:
+  contents: write # needed so the workflow can commit the rebuilt index back
+
+jobs:
+  rebuild-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Rebuild search-index/hadith_index.json
+        run: node scripts/build-hadith-index.js
+
+      - name: Commit updated index (if it changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add search-index/hadith_index.json
+          if git diff --cached --quiet; then
+            echo "No changes to the search index — nothing to commit."
+          else
+            git commit -m "chore: auto-rebuild hadith search index [skip ci]"
+            git push
+          fi
