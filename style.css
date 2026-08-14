@@ -979,4 +979,100 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 }
 .about-list { margin: 0 0 18px; padding-left: 24px; }
 .about-list li { margin-bottom: 8px; }
-
+/* --- Hadith Collections page: grouped table layout (sunnah.com-style) --- */
+.hadith-group {
+  margin-top: 44px;
+}
+.hadith-group:first-of-type {
+  margin-top: 36px;
+}
+.hadith-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.hadith-group-title-en {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.hadith-group-title-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.hadith-group-title-ar {
+  font-family: var(--font-display);
+  font-size: 19px;
+  color: var(--emerald);
+  white-space: nowrap;
+}
+.hadith-group-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+}
+@media (max-width: 720px) {
+  .hadith-group-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.hadith-group-col {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-sm);
+}
+.hadith-group-col:only-child,
+.hadith-group-col:last-child {
+  margin-top: 0;
+}
+@media (max-width: 720px) {
+  .hadith-group-col + .hadith-group-col {
+    margin-top: 14px;
+  }
+}
+.hadith-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+  transition: background var(--fast), padding-left var(--fast);
+}
+.hadith-group-col .hadith-row:last-child {
+  border-bottom: none;
+}
+.hadith-row:nth-child(odd) {
+  background: rgba(184, 134, 46, 0.04);
+}
+.hadith-row:hover {
+  background: rgba(184, 134, 46, 0.12);
+  padding-left: 22px;
+}
+.hadith-row-en {
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--emerald-deep);
+}
+.hadith-row-ar {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--ink);
+  opacity: 0.8;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .hadith-row { padding: 11px 14px; }
+  .hadith-row:hover { padding-left: 18px; }
+  .hadith-row-en { font-size: 13.5px; }
+  .hadith-row-ar { font-size: 15px; }
+}
