@@ -64,18 +64,24 @@ const HADITH_BOOKS = [
   {
     slug: "bukhari",
     name: "Sahih al-Bukhari",
+    arabic: "صحيح البخاري",
+    group: "major",
     shortDesc:
       "Sahih al-Bukhari is a collection of hadith compiled by Imam Muhammad al-Bukhari (d. 256 AH/870 CE) (rahimahullah). His collection is recognized by the overwhelming majority of the Muslim world to be the most authentic collection of reports of the Sunnah of the Prophet Muhammad (\uFDFA). It contains over 7500 hadith (with repetitions) in 97 books. The translation provided here is by Dr. M. Muhsin Khan.",
   },
   {
     slug: "muslim",
     name: "Sahih Muslim",
+    arabic: "صحيح مسلم",
+    group: "major",
     shortDesc:
       "Sahih Muslim is a collection of hadith compiled by Imam Muslim ibn al-Hajjaj al-Naysaburi (rahimahullah). His collection is considered one of the most authentic collections of the Sunnah of the Prophet Muhammad (\uFDFA), and together with Sahih al-Bukhari forms the \u2018Sahihain\u2019 (the Two Sahihs). It contains roughly 7,500 hadith (with repetitions) in 57 books. The translation provided here is by Abdul Hamid Siddiqui.",
   },
   {
     slug: "abudawud",
     name: "Sunan Abi Dawud",
+    arabic: "سنن أبي داود",
+    group: "major",
     shortDesc:
       "Sunan Abi Dawud is a collection of hadith compiled by Imam Abu Dawud Sulaiman ibn al-Ash\u2019ath as-Sijistani (rahimahullah). It is one of the six canonical hadith collections (Kutub as-Sittah) and contains 5,274 hadith in 43 books.",
     extraLinks: [
@@ -88,36 +94,61 @@ const HADITH_BOOKS = [
   {
     slug: "tirmidhi",
     name: "Jami' at-Tirmidhi",
+    arabic: "جامع الترمذي",
+    group: "major",
     shortDesc:
       "Jami' at-Tirmidhi is a collection of hadith compiled by Imam Abu 'Isa Muhammad at-Tirmidhi (rahimahullah). It is one of the six canonical collections of hadith (Kutub as-Sittah) and contains roughly 4,400 hadith (with repetitions) in 46 books.",
   },
   {
     slug: "nasai",
     name: "Sunan an-Nasa'i",
+    arabic: "سنن النسائي",
+    group: "major",
     shortDesc:
       "Sunan an-Nasa'i is a collection of hadith compiled by Imam Ahmad an-Nasa'i (rahimahullah). It is unanimously regarded as one of the six canonical collections of hadith (Kutub as-Sittah) and contains roughly 5,700 hadith (with repetitions) in 52 books.",
   },
   {
     slug: "ibnmajah",
     name: "Sunan Ibn Majah",
+    arabic: "سنن ابن ماجه",
+    group: "major",
     shortDesc:
       "Sunan Ibn Majah is a collection of hadith compiled by Imam Muhammad bin Yazid Ibn Majah al-Qazvini (rahimahullah). It is widely regarded as the sixth of the six canonical collections of hadith (Kutub as-Sittah) and contains 4,341 hadith arranged in 37 books.",
   },
   {
     slug: "malik",
     name: "Muwatta Malik",
+    arabic: "موطأ مالك",
+    group: "major",
     shortDesc:
       "Al-Muwatta of Imam Malik is one of the earliest and most influential collections of hadith and Islamic jurisprudence, compiled by Imam Malik ibn Anas (rahimahullah). It contains hadith, statements of the Companions, opinions of the Tabi'in, and the legal practice of the people of Madinah.",
   },
   {
     slug: "darimi",
     name: "Sunan ad-Darimi",
+    arabic: "سنن الدارمي",
+    group: "major",
     shortDesc:
       "Sunan ad-Darimi is a collection of hadith compiled by Imam Abu Muhammad Abd Allah ibn Abd al-Rahman ad-Darimi (rahimahullah). It contains roughly 3,400 hadith arranged across the major books of fiqh and belief.",
   },
-  { slug: "nawawi", name: "40 Hadith of an-Nawawi" },
-  { slug: "qudsi", name: "40 Hadith Qudsi" },
-  { slug: "dehlawi", name: "40 Hadith of Shah Waliullah Dehlawi" },
+  {
+    slug: "nawawi",
+    name: "40 Hadith of an-Nawawi",
+    arabic: "الأربعون النووية",
+    group: "forty",
+  },
+  {
+    slug: "qudsi",
+    name: "40 Hadith Qudsi",
+    arabic: "الأربعون القدسية",
+    group: "forty",
+  },
+  {
+    slug: "dehlawi",
+    name: "40 Hadith of Shah Waliullah Dehlawi",
+    arabic: "أربعون حديثاً لشاه ولي الله الدهلوي",
+    group: "forty",
+  },
 ];
 const hadithBookCache = {}; // slug -> { sections, hadithsByBook: {bookNum: [{ar,en}]} }
 
@@ -446,7 +477,7 @@ async function renderHome() {
         el("div", { class: "card-body" }, [
           el("span", { class: "card-kicker" }, "Typed text"),
           el("h2", { class: "card-title" }, "Hadith Collections"),
-          el("p", { class: "card-desc" }, "Sahih al-Bukhari, Sahih Muslim & 8 more \u2014 Arabic & English"),
+          el("p", { class: "card-desc" }, "Sahih al-Bukhari, Sahih Muslim & 9 more \u2014 Arabic & English"),
         ]),
       ])
     );
@@ -1106,7 +1137,7 @@ async function startHadithTicker(container) {
 async function renderHadithBooks() {
   setMeta({
     title: "Hadith Collections",
-    description: "Sahih al-Bukhari, Sahih Muslim, and 8 more authentic hadith collections — Arabic text with English translation, free online.",
+    description: "Sahih al-Bukhari, Sahih Muslim, and 9 more authentic hadith collections — Arabic text with English translation, free online.",
   });
   app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [el("a", { href: `${BASE_PATH}/` }, "Library"), " / Hadith Collections"]);
@@ -1114,20 +1145,47 @@ async function renderHadithBooks() {
     el("h1", { class: "page-title" }, "Hadith Collections"),
     el("p", { class: "duas-subtitle" }, "Arabic text with English translation, numbered as on sunnah.com"),
   ]);
-  const grid = el("div", { class: "grid" });
-  HADITH_BOOKS.forEach((b) => {
-    grid.appendChild(
-      el("a", { class: "card", href: `${BASE_PATH}/hadith/${b.slug}` }, [
-        el("div", { class: "card-spine" }),
-        el("div", { class: "card-body" }, [
-          el("span", { class: "card-kicker" }, "Collection"),
-          el("h2", { class: "card-title" }, b.name),
-          el("p", { class: "card-desc" }, "Tap to browse chapters"),
-        ]),
-      ])
+
+  function buildGroup(labelEn, labelAr, books) {
+    const title = el("div", { class: "hadith-group-title" }, [
+      el("span", { class: "hadith-group-title-en" }, labelEn),
+      el("span", { class: "hadith-group-title-rule" }),
+      el("span", { class: "hadith-group-title-ar" }, labelAr),
+    ]);
+
+    const half = Math.ceil(books.length / 2);
+    const columns = [books.slice(0, half), books.slice(half)];
+
+    const grid = el(
+      "div",
+      { class: "hadith-group-grid" },
+      columns.map((colBooks) =>
+        el(
+          "div",
+          { class: "hadith-group-col" },
+          colBooks.map((b) =>
+            el("a", { class: "hadith-row", href: `${BASE_PATH}/hadith/${b.slug}` }, [
+              el("span", { class: "hadith-row-en" }, b.name),
+              el("span", { class: "hadith-row-ar" }, b.arabic || ""),
+            ])
+          )
+        )
+      )
     );
-  });
-  const wrap = el("div", { class: "container" }, [crumb, heading, grid]);
+
+    return el("section", { class: "hadith-group" }, [title, grid]);
+  }
+
+  const majorBooks = HADITH_BOOKS.filter((b) => b.group === "major");
+  const fortyBooks = HADITH_BOOKS.filter((b) => b.group === "forty");
+  const otherBooks = HADITH_BOOKS.filter((b) => b.group !== "major" && b.group !== "forty");
+
+  const sections = [];
+  if (majorBooks.length) sections.push(buildGroup("Major Collections", "\u0627\u0644\u0645\u062c\u0645\u0648\u0639\u0627\u062a \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629", majorBooks));
+  if (fortyBooks.length) sections.push(buildGroup("Collections of Forty", "\u0627\u0644\u0623\u0631\u0628\u0639\u064a\u0646\u0627\u062a", fortyBooks));
+  if (otherBooks.length) sections.push(buildGroup("Other Collections", "\u0645\u062c\u0645\u0648\u0639\u0627\u062a \u0623\u062e\u0631\u0649", otherBooks));
+
+  const wrap = el("div", { class: "container" }, [crumb, heading, ...sections]);
   app.appendChild(el("main", {}, wrap));
 }
 
