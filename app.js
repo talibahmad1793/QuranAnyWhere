@@ -109,6 +109,12 @@ const HADITH_BOOKS = [
     shortDesc:
       "Al-Muwatta of Imam Malik is one of the earliest and most influential collections of hadith and Islamic jurisprudence, compiled by Imam Malik ibn Anas (rahimahullah). It contains hadith, statements of the Companions, opinions of the Tabi'in, and the legal practice of the people of Madinah.",
   },
+  {
+    slug: "darimi",
+    name: "Sunan ad-Darimi",
+    shortDesc:
+      "Sunan ad-Darimi is a collection of hadith compiled by Imam Abu Muhammad Abd Allah ibn Abd al-Rahman ad-Darimi (rahimahullah). It contains roughly 3,400 hadith arranged across the major books of fiqh and belief.",
+  },
   { slug: "nawawi", name: "40 Hadith of an-Nawawi" },
   { slug: "qudsi", name: "40 Hadith Qudsi" },
   { slug: "dehlawi", name: "40 Hadith of Shah Waliullah Dehlawi" },
