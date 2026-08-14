@@ -1143,7 +1143,7 @@ async function renderHadithBooks() {
   const crumb = el("p", { class: "crumb" }, [el("a", { href: `${BASE_PATH}/` }, "Library"), " / Hadith Collections"]);
   const heading = el("div", {}, [
     el("h1", { class: "page-title" }, "Hadith Collections"),
-    el("p", { class: "duas-subtitle" }, "Arabic text with English translation, numbered as on sunnah.com"),
+    el("p", { class: "duas-subtitle" }, "The words of the Prophet \uFDFA in Arabic, English & Hinglish"),
   ]);
 
   function buildGroup(labelEn, labelAr, books) {
