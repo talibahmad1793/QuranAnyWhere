@@ -565,26 +565,26 @@ async function renderHome() {
   main.appendChild(el("div", { class: "home-top" }, [resume, daily]));
 
   /* Row 2 — quick tiles */
-  const favCount = (typeof getFavorites === "function" ? getFavorites() : []).length;
   const tiles = [
-    [`${BASE_PATH}/quran-text/1`, "Read Qur'an", "Juz by juz, apni raftaar se", "is-emerald"],
-    [`${BASE_PATH}/hadith`, "Hadith", "Bukhari, Muslim aur 9 more", "is-gold"],
-    [`${BASE_PATH}/duas`, "Dua & Dhikr", "Roz ke duas, har waqt ke liye", "is-sage"],
-    [`${BASE_PATH}/favorites`, "Favorites", favCount ? `${favCount} saved` : "Jo save karein, yahan milega", "is-clay"],
+    { href: `${BASE_PATH}/quran-text/1`, label: "Read Qur'an", sub: "Juz by juz ya surah — apni marzi se", tint: "is-emerald" },
+    { href: `${BASE_PATH}/hadith`, label: "Hadith", sub: "Bukhari, Muslim aur more", tint: "is-gold" },
+    { href: `${BASE_PATH}/duas`, label: "Dua & Azkar", sub: "Roz ke duas, tasbeeh counter", tint: "is-sage" },
+    { href: `${BASE_PATH}/`, label: "Prayer times", sub: "Finding your location\u2026", tint: "is-clay", subId: "qawPrayerTileSub" },
   ];
   main.appendChild(
     el(
       "div",
       { class: "home-tiles" },
-      tiles.map(([href, label, sub, tint]) =>
-        el("a", { class: `home-tile ${tint}`, href }, [
+      tiles.map((t) =>
+        el("a", { class: `home-tile ${t.tint}`, href: t.href }, [
           el("span", { class: "home-tile-mark", "aria-hidden": "true" }),
-          el("span", { class: "home-tile-label" }, label),
-          el("span", { class: "home-tile-sub" }, sub),
+          el("span", { class: "home-tile-label" }, t.label),
+          el("span", Object.assign({ class: "home-tile-sub" }, t.subId ? { id: t.subId } : {}), t.sub),
         ])
       )
     )
   );
+  if (typeof qawApplyPrayerLabelsIfCached === "function") qawApplyPrayerLabelsIfCached();
 
   /* Row 3 — the library (unchanged data source and card markup) */
   main.appendChild(
@@ -1884,6 +1884,11 @@ function route() {
   path = path.replace(/^\/+/, "");
   const parts = path.split("/").filter(Boolean);
 
+  if (typeof qawSetActiveNav === "function") qawSetActiveNav(qawNavKeyFromParts(parts));
+  if (typeof qawRefreshSidebarChrome === "function") qawRefreshSidebarChrome();
+  const qawTopSearchInput = document.getElementById("qawTopSearchInput");
+  if (qawTopSearchInput) qawTopSearchInput.value = parts[0] === "search" && parts[1] ? decodeURIComponent(parts[1]) : "";
+
   if (parts[0] === "search") {
     renderSearch(parts[1] ? decodeURIComponent(parts[1]) : "");
   } else if (parts[0] === "favorites") {
@@ -1944,4 +1949,295 @@ window.addEventListener("popstate", route);
 window.addEventListener("DOMContentLoaded", () => {
   updateFavoritesBadge();
   route();
+});
+
+/* =============================================================================
+   QuranAW — app shell chrome (v3): sidebar active state, streak display,
+   nav counts, reading-theme toggle (Paper/Sepia/Night), topbar search.
+   Uses only existing helpers: BASE_PATH, HADITH_BOOKS, getFavorites,
+   qawStreakInfo, qawTouchStreak, navigate. Safe no-ops if an element is
+   missing (so this never breaks a page that doesn't have the shell).
+   ========================================================================== */
+
+/* --- Sidebar active nav ------------------------------------------------- */
+function qawSetActiveNav(navKey) {
+  document.querySelectorAll(".qaw-nav-item").forEach((a) => {
+    a.classList.toggle("is-active", a.getAttribute("data-nav") === navKey);
+  });
+}
+
+function qawNavKeyFromParts(parts) {
+  const p0 = parts[0];
+  if (!p0) return "home";
+  if (p0 === "quran-text") return "quran";
+  if (p0 === "book" && parts[1] === QURAN_TEXT_BOOK_SLUG) return "quran";
+  if (p0 === "hadith" || p0 === "hadith-about") return "hadith";
+  if (p0 === "search") return "search";
+  if (p0 === "duas") return "duas";
+  if (p0 === "favorites") return "favorites";
+  return "";
+}
+
+/* --- Sidebar streak + counts, refreshed on every route change ----------- */
+function qawRefreshSidebarChrome() {
+  qawTouchStreak();
+  const { streak, week } = qawStreakInfo();
+
+  const numEl = document.getElementById("qawSidebarStreakNum");
+  if (numEl) numEl.textContent = String(streak);
+
+  const weekEl = document.getElementById("qawSidebarStreakWeek");
+  if (weekEl) {
+    weekEl.innerHTML = "";
+    week.forEach((on) => {
+      const dot = document.createElement("span");
+      dot.className = on ? "qaw-streak-dot is-on" : "qaw-streak-dot";
+      weekEl.appendChild(dot);
+    });
+  }
+
+  const hadithCountEl = document.getElementById("qawNavHadithCount");
+  if (hadithCountEl) hadithCountEl.textContent = `${HADITH_BOOKS.length} books`;
+
+  updateFavoritesBadge();
+}
+
+/* --- Reading theme: Paper (default) / Sepia / Night ---------------------- */
+const QAW_THEME_KEY = "qaw:theme";
+
+function qawApplyTheme(name) {
+  if (name && name !== "paper") {
+    document.documentElement.setAttribute("data-theme", name);
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+  document.querySelectorAll(".qaw-theme-btn").forEach((btn) => {
+    btn.classList.toggle("is-active", btn.getAttribute("data-theme-choice") === (name || "paper"));
+  });
+  try {
+    localStorage.setItem(QAW_THEME_KEY, name || "paper");
+  } catch (e) {
+    /* storage unavailable */
+  }
+}
+
+function qawInitThemeToggle() {
+  let saved = "paper";
+  try {
+    saved = localStorage.getItem(QAW_THEME_KEY) || "paper";
+  } catch (e) {
+    /* storage unavailable */
+  }
+  qawApplyTheme(saved);
+
+  document.querySelectorAll(".qaw-theme-btn").forEach((btn) => {
+    btn.addEventListener("click", () => qawApplyTheme(btn.getAttribute("data-theme-choice")));
+  });
+}
+
+/* --- Topbar search: submits into the existing /search/<query> route ----- */
+function qawInitTopSearch() {
+  const form = document.getElementById("qawTopSearch");
+  const input = document.getElementById("qawTopSearchInput");
+  if (!form || !input) return;
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = input.value.trim();
+    if (q) navigate(`${BASE_PATH}/search/${encodeURIComponent(q)}`);
+  });
+}
+
+/* --- Mobile sidebar toggle ------------------------------------------------ */
+function qawInitSidebarToggle() {
+  const btn = document.getElementById("qawMenuBtn");
+  const sidebar = document.getElementById("qawSidebar");
+  const backdrop = document.getElementById("qawSidebarBackdrop");
+  if (!btn || !sidebar || !backdrop) return;
+
+  const close = () => {
+    sidebar.classList.remove("is-open");
+    backdrop.classList.remove("is-open");
+    btn.setAttribute("aria-expanded", "false");
+  };
+  const open = () => {
+    sidebar.classList.add("is-open");
+    backdrop.classList.add("is-open");
+    btn.setAttribute("aria-expanded", "true");
+  };
+
+  btn.addEventListener("click", () => {
+    sidebar.classList.contains("is-open") ? close() : open();
+  });
+  backdrop.addEventListener("click", close);
+  sidebar.querySelectorAll("a").forEach((a) => a.addEventListener("click", close));
+}
+
+/* =============================================================================
+   QuranAW — prayer times (v1): location-based namaz timings + Qibla direction.
+   Uses the Aladhan API (aladhan.com — free, no key, CORS-open). Calculation
+   method 1 = University of Islamic Sciences, Karachi, the common default
+   across India/Pakistan. Falls back from GPS -> IP geolocation -> a plain
+   "unavailable" message; caches one day's timings in localStorage so a
+   repeat visit the same day doesn't re-fetch or re-prompt for location.
+   ========================================================================== */
+
+const QAW_PRAYER_CACHE_KEY = "qaw:prayerCache"; // { date, lat, lon, timings }
+const QAW_PRAYER_METHOD = 1;
+const QAW_KAABA_LAT = 21.4225;
+const QAW_KAABA_LON = 39.8262;
+const QAW_PRAYER_ORDER = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+
+let qawPrayerState = null; // { timings, lat, lon } for the current session, once loaded
+
+function qawTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Great-circle bearing from (lat, lon) to the Kaaba, 0-360 degrees from north.
+function qawQiblaBearing(lat, lon) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const toDeg = (r) => (r * 180) / Math.PI;
+  const phi1 = toRad(lat);
+  const phi2 = toRad(QAW_KAABA_LAT);
+  const dLon = toRad(QAW_KAABA_LON - lon);
+  const y = Math.sin(dLon) * Math.cos(phi2);
+  const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLon);
+  return Math.round((toDeg(Math.atan2(y, x)) + 360) % 360);
+}
+
+function qawFormatTime12(hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "pm" : "am";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+function qawFormatCountdown(diffMin) {
+  if (diffMin < 60) return `${diffMin} min`;
+  const h = Math.floor(diffMin / 60);
+  const m = diffMin % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+// Finds the next of the 5 daily prayers relative to the current local time.
+// Rolls over to tomorrow's Fajr if we're already past tonight's Isha.
+function qawNextPrayer(timings) {
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  for (const name of QAW_PRAYER_ORDER) {
+    const [h, m] = timings[name].split(":").map(Number);
+    const mins = h * 60 + m;
+    if (mins > nowMin) return { name, time: timings[name], diffMin: mins - nowMin };
+  }
+  const [h, m] = timings.Fajr.split(":").map(Number);
+  return { name: "Fajr", time: timings.Fajr, diffMin: 24 * 60 - nowMin + (h * 60 + m) };
+}
+
+async function qawFetchTimings(lat, lon) {
+  const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=${QAW_PRAYER_METHOD}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Prayer API error (${res.status})`);
+  const json = await res.json();
+  return json.data.timings;
+}
+
+function qawGetCachedTimings(lat, lon) {
+  try {
+    const raw = localStorage.getItem(QAW_PRAYER_CACHE_KEY);
+    if (!raw) return null;
+    const cache = JSON.parse(raw);
+    if (cache.date !== qawTodayStr()) return null;
+    // ~0.5deg tolerance (~55km) - avoid refetching for tiny GPS drift.
+    if (Math.abs(cache.lat - lat) > 0.5 || Math.abs(cache.lon - lon) > 0.5) return null;
+    return cache.timings;
+  } catch (e) {
+    return null;
+  }
+}
+
+function qawSetCachedTimings(lat, lon, timings) {
+  try {
+    localStorage.setItem(QAW_PRAYER_CACHE_KEY, JSON.stringify({ date: qawTodayStr(), lat, lon, timings }));
+  } catch (e) {
+    /* storage unavailable */
+  }
+}
+
+function qawSetPrayerLabel(text) {
+  const labelEl = document.getElementById("qawPrayerLabel");
+  if (labelEl) labelEl.textContent = text;
+}
+
+function qawSetPrayerTileSub(text) {
+  const subEl = document.getElementById("qawPrayerTileSub");
+  if (subEl) subEl.textContent = text;
+}
+
+// If a page render (e.g. navigating back Home) rebuilds the prayer tile
+// after we already resolved timings this session, fill it in immediately
+// instead of showing "Finding your location..." again.
+function qawApplyPrayerLabelsIfCached() {
+  if (!qawPrayerState) return;
+  const next = qawNextPrayer(qawPrayerState.timings);
+  const qibla = qawQiblaBearing(qawPrayerState.lat, qawPrayerState.lon);
+  qawSetPrayerTileSub(`${next.name} ${qawFormatTime12(next.time)} \u00b7 Qibla ${qibla}\u00b0`);
+}
+
+function qawRenderPrayerUI(timings, lat, lon) {
+  qawPrayerState = { timings, lat, lon };
+  const next = qawNextPrayer(timings);
+  qawSetPrayerLabel(`${next.name} ${qawFormatTime12(next.time)} \u00b7 ${qawFormatCountdown(next.diffMin)}`);
+  qawApplyPrayerLabelsIfCached();
+}
+
+async function qawLoadPrayerTimes(lat, lon) {
+  let timings = qawGetCachedTimings(lat, lon);
+  if (!timings) {
+    timings = await qawFetchTimings(lat, lon);
+    qawSetCachedTimings(lat, lon, timings);
+  }
+  qawRenderPrayerUI(timings, lat, lon);
+}
+
+async function qawTryIpFallback() {
+  try {
+    const res = await fetch("https://ipapi.co/json/");
+    if (!res.ok) throw new Error("IP lookup failed");
+    const json = await res.json();
+    if (!json.latitude || !json.longitude) throw new Error("No coordinates from IP lookup");
+    await qawLoadPrayerTimes(json.latitude, json.longitude);
+  } catch (e) {
+    qawSetPrayerLabel("Prayer times unavailable");
+    qawSetPrayerTileSub("Enable location to see namaz times");
+  }
+}
+
+function qawInitPrayerTimes() {
+  if (!document.getElementById("qawPrayerLabel")) return; // shell not present on this page
+  qawSetPrayerLabel("Finding your location\u2026");
+
+  if (!navigator.geolocation) {
+    qawTryIpFallback();
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      qawLoadPrayerTimes(pos.coords.latitude, pos.coords.longitude).catch(qawTryIpFallback);
+    },
+    () => {
+      qawTryIpFallback();
+    },
+    { timeout: 8000, maximumAge: 3600000 }
+  );
+}
+
+/* --- One-time init on first load ----------------------------------------- */
+window.addEventListener("DOMContentLoaded", () => {
+  qawInitThemeToggle();
+  qawInitTopSearch();
+  qawInitSidebarToggle();
+  qawRefreshSidebarChrome();
+  qawInitPrayerTimes();
 });

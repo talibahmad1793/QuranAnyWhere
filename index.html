@@ -78,7 +78,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/QuranAnyWhere/style.css?v=13" />
+    <link rel="stylesheet" href="/QuranAnyWhere/style.css?v=14" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
       pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -86,43 +86,98 @@
     </script>
   </head>
   <body>
-    <header class="site-header">
-      <div class="container header-inner">
-        <a href="/QuranAnyWhere/" class="brand">
-          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-            <path d="M13 2 L15.2 9.8 L23 12 L15.2 14.2 L13 22 L10.8 14.2 L3 12 L10.8 9.8 Z" fill="var(--gold)" />
-          </svg>
-          <span class="brand-text" data-site-title>QuranAnyWhere</span>
+    <div class="qaw-shell">
+      <button type="button" class="qaw-menu-btn" id="qawMenuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="qawSidebar">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="qaw-sidebar-backdrop" id="qawSidebarBackdrop"></div>
+
+      <aside class="qaw-sidebar" id="qawSidebar">
+        <a href="/QuranAnyWhere/" class="qaw-brand">
+          <span class="qaw-brand-mark" aria-hidden="true"></span>
+          <span class="qaw-brand-col">
+            <span class="qaw-brand-name" data-site-title>QuranAnyWhere</span>
+            <span class="qaw-brand-tag">Read · Reflect · Live</span>
+          </span>
         </a>
-        <div class="header-links">
-          <a href="/QuranAnyWhere/favorites" class="header-search-link" aria-label="Favorites">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M10 17.3s-6.1-3.8-8.1-7.5C.5 7 1.6 4 4.5 3.3c1.7-.4 3.3.2 4.2 1.6.9-1.4 2.5-2 4.2-1.6 2.9.7 4 3.7 2.6 6.5-2 3.7-8.1 7.5-8.1 7.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-            </svg>
-            <span>Favorites</span>
-            <span id="headerFavCount" class="header-fav-count" style="display:none;"></span>
+
+        <nav class="qaw-nav" aria-label="Main navigation">
+          <a class="qaw-nav-item" data-nav="home" href="/QuranAnyWhere/">
+            <span class="qaw-nav-dot" aria-hidden="true"></span>
+            <span class="qaw-nav-label">Home</span>
           </a>
-          <a href="/QuranAnyWhere/search" class="header-search-link" aria-label="Search">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <a class="qaw-nav-item" data-nav="quran" href="/QuranAnyWhere/quran-text/1">
+            <span class="qaw-nav-dot" aria-hidden="true"></span>
+            <span class="qaw-nav-label">Qur'an</span>
+            <span class="qaw-nav-meta">30 juz</span>
+          </a>
+          <a class="qaw-nav-item" data-nav="hadith" href="/QuranAnyWhere/hadith">
+            <span class="qaw-nav-dot" aria-hidden="true"></span>
+            <span class="qaw-nav-label">Hadith</span>
+            <span class="qaw-nav-meta" id="qawNavHadithCount"></span>
+          </a>
+          <a class="qaw-nav-item" data-nav="search" href="/QuranAnyWhere/search">
+            <span class="qaw-nav-dot" aria-hidden="true"></span>
+            <span class="qaw-nav-label">Search</span>
+          </a>
+          <a class="qaw-nav-item" data-nav="duas" href="/QuranAnyWhere/duas">
+            <span class="qaw-nav-dot" aria-hidden="true"></span>
+            <span class="qaw-nav-label">Dua &amp; Azkar</span>
+          </a>
+          <a class="qaw-nav-item" data-nav="favorites" href="/QuranAnyWhere/favorites">
+            <span class="qaw-nav-dot" aria-hidden="true"></span>
+            <span class="qaw-nav-label">Favorites</span>
+            <span id="headerFavCount" class="qaw-nav-meta qaw-nav-badge" style="display:none;"></span>
+          </a>
+        </nav>
+
+        <div class="qaw-sidebar-foot">
+          <div class="qaw-streak-box">
+            <span class="qaw-streak-kicker">Reading streak</span>
+            <div class="qaw-streak-row">
+              <span class="qaw-streak-num" id="qawSidebarStreakNum">0</span>
+              <span class="qaw-streak-sub">days</span>
+            </div>
+            <div class="qaw-streak-week" id="qawSidebarStreakWeek" aria-hidden="true"></div>
+          </div>
+          <p class="qaw-sidebar-arabic">القرآن والسنة نور الحياة</p>
+        </div>
+      </aside>
+
+      <div class="qaw-main">
+        <div class="qaw-topbar">
+          <form class="qaw-topbar-search" id="qawTopSearch" role="search">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.6"/>
               <line x1="13" y1="13" x2="18" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             </svg>
-            <span>Search</span>
-          </a>
-        </div>
-      </div>
-    </header>
+            <input type="search" id="qawTopSearchInput" placeholder="Search ayah, hadith, dua…" aria-label="Search" />
+          </form>
 
-    <div id="app">
-      <!-- Static fallback content: visible to crawlers that don't execute JS
-           (or time out before it runs). app.js immediately clears and
-           replaces this the moment it loads, so JS-enabled visitors never
-           see it. Keeps a real H1 + description in the raw HTML at all times. -->
-      <main class="container" style="padding-top: 40px;">
-        <h1 class="page-title">QuranAnyWhere</h1>
-        <p>Read the Qur'an juz by juz and explore Hinglish translations of Sahih al-Bukhari, Sahih Muslim &amp; more hadith collections — free, anywhere, on any device.</p>
-      </main>
-    </div>
+          <div class="qaw-theme-toggle" id="qawThemeToggle" role="group" aria-label="Reading theme">
+            <button type="button" class="qaw-theme-btn" data-theme-choice="paper">Paper</button>
+            <button type="button" class="qaw-theme-btn" data-theme-choice="sepia">Sepia</button>
+            <button type="button" class="qaw-theme-btn" data-theme-choice="night">Night</button>
+          </div>
+
+          <div class="qaw-prayer-chip" id="qawPrayerChip">
+            <span class="qaw-prayer-dot" aria-hidden="true"></span>
+            <span id="qawPrayerLabel">Finding your location…</span>
+          </div>
+        </div>
+
+        <div id="app">
+          <!-- Static fallback content: visible to crawlers that don't execute JS
+               (or time out before it runs). app.js immediately clears and
+               replaces this the moment it loads, so JS-enabled visitors never
+               see it. Keeps a real H1 + description in the raw HTML at all times. -->
+          <main class="container" style="padding-top: 40px;">
+            <h1 class="page-title">QuranAnyWhere</h1>
+            <p>Read the Qur'an juz by juz and explore Hinglish translations of Sahih al-Bukhari, Sahih Muslim &amp; more hadith collections — free, anywhere, on any device.</p>
+          </main>
+        </div>
 
     <footer class="site-footer">
       <div class="container footer-top">
@@ -221,8 +276,11 @@
       </div>
     </footer>
 
-    <script src="/QuranAnyWhere/config.js?v=11"></script>
-    <script src="/QuranAnyWhere/app.js?v=13"></script>
+      </div><!-- /.qaw-main -->
+    </div><!-- /.qaw-shell -->
+
+    <script src="/QuranAnyWhere/config.js?v=12"></script>
+    <script src="/QuranAnyWhere/app.js?v=15"></script>
     <script>
       document.querySelectorAll("[data-year]").forEach((el) => {
         el.textContent = new Date().getFullYear();
