@@ -1175,8 +1175,8 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 }
 .home-btn-cream { background: #f1ead7; color: #123430; }
 .home-btn-cream:hover { background: var(--gold); color: #fffdf5; }
-.home-btn-ghost { border: 1px solid rgba(241, 234, 215, 0.32); color: #f1ead7; }
-.home-btn-ghost:hover { border-color: var(--gold); color: var(--gold-soft); }
+.home-btn-ghost { background: none; border: 1px solid rgba(241, 234, 215, 0.32); color: #f1ead7; }
+.home-btn-ghost:hover { background: rgba(241, 234, 215, 0.08); border-color: var(--gold); color: var(--gold-soft); }
 
 .home-streak {
   display: flex;
@@ -1964,4 +1964,102 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
 @media (max-width: 640px) {
   .pt-card { padding: 20px; }
   .pt-next-name { font-size: 24px; }
+}
+
+/* =============================================================================
+   QuranAW — continuous recitation player (v1): a simple "listen straight
+   through" page, separate from the study reader. Namespaced .pl-*.
+   ========================================================================== */
+.qr-header-listen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-accent);
+  border-bottom: 1px solid var(--gold);
+}
+.qr-header-listen:hover { color: var(--gold); }
+
+.pl-container { padding-top: 20px; }
+
+.pl-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+.pl-header-mid { flex: 1; text-align: center; }
+.pl-header-kicker {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(var(--ink-rgb), 0.5);
+}
+.pl-header-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--text-strong); margin: 6px 0 2px; }
+.pl-header-ar { display: block; font-family: var(--font-display); font-size: 22px; color: var(--gold); margin-bottom: 4px; }
+.pl-header-sub { font-size: 13px; color: rgba(var(--ink-rgb), 0.6); margin: 0; }
+.pl-nav-btn { flex: none; font-size: 13px; font-weight: 600; color: var(--text-accent); white-space: nowrap; }
+.pl-nav-btn:hover { color: var(--gold); }
+.pl-nav-btn[aria-disabled="true"] { opacity: 0.3; pointer-events: none; }
+
+.pl-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.pl-play-all { padding: 13px 26px; font-size: 15px; }
+.pl-autonext {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(var(--ink-rgb), 0.65);
+  cursor: pointer;
+}
+
+.pl-list { display: flex; flex-direction: column; gap: 6px; }
+.pl-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  transition: background var(--fast), border-color var(--fast);
+}
+.pl-row.is-playing { background: rgba(184, 134, 46, 0.14); border-color: var(--gold); }
+.pl-row-num {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: rgba(var(--ink-rgb), 0.6);
+}
+.pl-row.is-playing .pl-row-num { border-color: var(--gold); color: var(--gold); font-weight: 700; }
+.pl-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pl-row-ar { font-family: var(--font-display); font-size: 19px; direction: rtl; text-align: right; color: var(--ink); }
+.pl-row-translit { font-family: var(--font-accent); font-style: italic; font-size: 13px; color: rgba(var(--ink-rgb), 0.6); }
+
+@media (max-width: 640px) {
+  .pl-header { flex-direction: column; text-align: center; }
+  .pl-nav-btn { align-self: stretch; text-align: center; }
+  .pl-row { flex-direction: column; align-items: flex-start; }
+  .pl-row-ar { text-align: right; width: 100%; }
 }

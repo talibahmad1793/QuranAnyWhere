@@ -317,13 +317,18 @@ const SURAH_META = [
    QuranAW — recitation audio. Streams from cdn.islamic.network (the CDN
    behind alquran.cloud) - free, no API key, CORS-open. Reciter: Mishary
    Rashid Alafasy (ar.alafasy), a widely-used default edition on that CDN.
-   Only one clip plays at a time; clicking the active Play button again
-   pauses it, matching normal media-player expectations.
+   Only one clip plays at a time. Clicking the active button again pauses
+   in place (resume continues from the same position, not the start).
+   After the Arabic recitation finishes, the Hinglish translation is read
+   aloud too (via the browser's built-in Web Speech API) so a listener
+   gets the meaning, not just the sound - voice quality/availability for
+   Hindi/Urdu depends on the browser and OS.
    ========================================================================== */
 const QAW_RECITER_EDITION = "ar.alafasy";
 const QAW_RECITER_BITRATE = 128;
 let qawAudioEl = null;
 let qawAudioActiveBtn = null;
+let qawAudioActiveUrl = null;
 
 // Converts (surah, ayah) into the Quran-wide ayah number (1-6236) the CDN
 // indexes by, using this project's own verified per-surah ayah counts.
@@ -341,29 +346,70 @@ function qawSurahAudioUrl(s) {
   return `https://cdn.islamic.network/quran/audio-surah/${QAW_RECITER_BITRATE}/${QAW_RECITER_EDITION}/${s}.mp3`;
 }
 
-function qawStopAudio() {
-  if (qawAudioEl) {
-    qawAudioEl.pause();
-    qawAudioEl.currentTime = 0;
-  }
-  if (qawAudioActiveBtn) {
-    qawAudioActiveBtn.textContent = qawAudioActiveBtn.dataset.playLabel || "Play";
-    qawAudioActiveBtn = null;
-  }
+// Speaks `text` aloud via the Web Speech API, resolving when it finishes
+// (or immediately if speech synthesis isn't available - never rejects, so
+// callers can always safely await it).
+function qawSpeakText(text) {
+  return new Promise((resolve) => {
+    if (!text || !("speechSynthesis" in window)) {
+      resolve();
+      return;
+    }
+    try {
+      const utter = new SpeechSynthesisUtterance(text);
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find((v) => /^hi/i.test(v.lang)) || voices.find((v) => /^ur/i.test(v.lang));
+      if (preferred) utter.voice = preferred;
+      utter.rate = 0.95;
+      utter.onend = resolve;
+      utter.onerror = resolve;
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      resolve();
+    }
+  });
 }
 
-// Plays a recitation URL through a single shared <audio> element, updating
-// `btn`'s label to reflect state (Loading.../Pause/Play). Clicking the same
-// button again pauses; clicking a different Play button stops whatever was
-// playing first, so only one clip ever plays at once.
-function qawPlayAudioUrl(url, btn, label) {
-  if (qawAudioActiveBtn === btn) {
-    qawStopAudio();
+function qawStopAudio() {
+  if (qawAudioEl) {
+    qawAudioEl.onended = null;
+    qawAudioEl.pause();
+  }
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  if (qawAudioActiveBtn) {
+    qawAudioActiveBtn.textContent = qawAudioActiveBtn.dataset.playLabel || "Play";
+  }
+  qawAudioActiveBtn = null;
+  qawAudioActiveUrl = null;
+}
+
+// Plays a recitation URL through a single shared <audio> element.
+// - Clicking the SAME button while that exact track is active toggles
+//   pause/resume in place (position is preserved).
+// - Clicking a different Play button (or a new track) stops whatever was
+//   playing first and starts the new one from the beginning.
+// - `narrationText`, if given, is spoken aloud (Hinglish translation) once
+//   the Arabic recitation ends, before the button reverts to `label`.
+// - `onFinished`, if given, fires after recitation + narration both finish
+//   naturally (not on manual pause/stop) - used to auto-advance a playlist.
+function qawPlayAudioUrl(url, btn, label, narrationText, onFinished) {
+  const isSameTrack = qawAudioActiveBtn === btn && qawAudioActiveUrl === url && qawAudioEl;
+  if (isSameTrack) {
+    if (qawAudioEl.paused) {
+      qawAudioEl.play().then(() => {
+        if (qawAudioActiveBtn === btn) btn.textContent = "Pause";
+      }, () => {});
+    } else {
+      qawAudioEl.pause();
+      btn.textContent = "Resume";
+    }
     return;
   }
+
   qawStopAudio();
   if (!qawAudioEl) qawAudioEl = new Audio();
   qawAudioEl.src = url;
+  qawAudioActiveUrl = url;
   btn.dataset.playLabel = label;
   qawAudioActiveBtn = btn;
   btn.textContent = "Loading\u2026";
@@ -374,17 +420,27 @@ function qawPlayAudioUrl(url, btn, label) {
     },
     () => {
       btn.textContent = "Couldn't play audio";
-      if (qawAudioActiveBtn === btn) qawAudioActiveBtn = null;
+      if (qawAudioActiveBtn === btn) {
+        qawAudioActiveBtn = null;
+        qawAudioActiveUrl = null;
+      }
       setTimeout(() => {
         if (btn.textContent === "Couldn't play audio") btn.textContent = label;
       }, 2000);
     }
   );
-  qawAudioEl.onended = () => {
-    if (qawAudioActiveBtn === btn) {
-      btn.textContent = label;
-      qawAudioActiveBtn = null;
+
+  qawAudioEl.onended = async () => {
+    if (qawAudioActiveBtn !== btn) return; // superseded by another track already
+    if (narrationText) {
+      btn.textContent = "Reading meaning\u2026";
+      await qawSpeakText(narrationText);
     }
+    if (qawAudioActiveBtn !== btn) return; // stopped/switched while narrating
+    btn.textContent = label;
+    qawAudioActiveBtn = null;
+    qawAudioActiveUrl = null;
+    if (onFinished) onFinished();
   };
 }
 
@@ -1309,6 +1365,21 @@ async function fetchJuz(juzNumber) {
   return res.json();
 }
 
+// Gathers every ayah of a surah, fetching juz files sequentially starting
+// from where the surah begins (SURAH_META[s].juz) until every ayah has
+// been found - needed because a surah can span more than one juz file.
+async function fetchSurahAyahs(surahNumber) {
+  const meta = SURAH_META[surahNumber];
+  let ayahs = [];
+  let juz = meta.juz;
+  while (ayahs.length < meta.ayahs && juz <= 30) {
+    const data = await fetchJuz(juz);
+    ayahs = ayahs.concat(data.filter((v) => v.s === surahNumber));
+    juz++;
+  }
+  return ayahs;
+}
+
 /* --- Reading preferences: Arabic size + which lines to show, persisted --- */
 const QAW_QURAN_PREFS_KEY = "qaw:quranPrefs";
 const QAW_QURAN_PREFS_DEFAULT = { arabicSize: 26, translation: true, translit: true, tafsir: false };
@@ -1511,7 +1582,7 @@ async function renderQuranText(juzNumber, scrollTarget) {
 
     const playBtn = el("button", { class: "btn btn-ghost qr-action", type: "button" }, "Play");
     playBtn.addEventListener("click", () => {
-      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playBtn, "Play");
+      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playBtn, "Play", v.u);
     });
 
     return el("div", { class: "qr-verse-actions" }, [saveBtn, shareBtn, playBtn]);
@@ -1532,7 +1603,10 @@ async function renderQuranText(juzNumber, scrollTarget) {
           { class: "qr-header-sub" },
           meta ? `${meta.ayahs} ayat \u00b7 ${meta.type === "Meccan" ? "Makki" : "Madani"}` : ""
         ),
-      ])
+        firstSurah
+          ? el("a", { class: "qr-header-listen", href: `${BASE_PATH}/quran-play/${firstSurah}` }, "\u25b6 Listen to full surah")
+          : null,
+      ].filter(Boolean))
     );
     if (meta) header.appendChild(el("span", { class: "qr-header-ar", dir: "rtl" }, meta.ar));
 
@@ -2556,6 +2630,7 @@ function route() {
   path = path.replace(/^\/+/, "");
   const parts = path.split("/").filter(Boolean);
 
+  if (typeof qawStopAudio === "function") qawStopAudio();
   if (typeof qawSetActiveNav === "function") qawSetActiveNav(qawNavKeyFromParts(parts));
   if (typeof qawRefreshSidebarChrome === "function") qawRefreshSidebarChrome();
   const qawTopSearchInput = document.getElementById("qawTopSearchInput");
@@ -2565,6 +2640,8 @@ function route() {
     renderSearch(parts[1] ? decodeURIComponent(parts[1]) : "");
   } else if (parts[0] === "prayer-times") {
     renderPrayerTimes();
+  } else if (parts[0] === "quran-play") {
+    renderQuranPlayer(parts[1] ? parseInt(parts[1], 10) || 1 : 1);
   } else if (parts[0] === "favorites") {
     renderFavorites();
   } else if (parts[0] === "hadith-about" && parts[1] && parts[2]) {
@@ -3014,6 +3091,147 @@ async function renderPrayerTimes() {
     locationLine.textContent = "Couldn't determine your location.";
     card.innerHTML = "";
     renderError(card, "Enable location access in your browser and reload this page to see prayer times.");
+  }
+}
+
+/* --- Continuous recitation player: plays a whole surah, ayah by ayah ------
+   Separate from the study reader (/quran-text/*) - this is a simple,
+   podcast-style "listen straight through" page: pick a surah, hit Play, and
+   it recites every ayah in order (Arabic, then the Hinglish meaning spoken
+   aloud), auto-advancing down the list and optionally rolling into the next
+   surah when this one ends. */
+const QAW_AUTOPLAY_KEY = "qaw:playerAutoNext";
+
+function qawGetAutoNextPref() {
+  try {
+    return localStorage.getItem(QAW_AUTOPLAY_KEY) !== "off";
+  } catch (e) {
+    return true;
+  }
+}
+function qawSetAutoNextPref(on) {
+  try {
+    localStorage.setItem(QAW_AUTOPLAY_KEY, on ? "on" : "off");
+  } catch (e) {
+    /* storage unavailable */
+  }
+}
+
+async function renderQuranPlayer(surahNumber, opts) {
+  surahNumber = Math.max(1, Math.min(surahNumber, 114));
+  const autoplay = !!(opts && opts.autoplay);
+  const meta = SURAH_META[surahNumber];
+  const surahName = SURAH_NAMES[surahNumber] || `Surah ${surahNumber}`;
+
+  setMeta({
+    title: `Listen: ${surahName}`,
+    description: `Listen to ${surahName} recited in full, ayah by ayah, with the Hinglish meaning read aloud.`,
+  });
+
+  if (!opts || !opts.internalNav) {
+    app.innerHTML = "";
+  }
+
+  const crumb = el("p", { class: "crumb" }, [
+    el("a", { href: `${BASE_PATH}/` }, "Library"),
+    " / ",
+    el("a", { href: `${BASE_PATH}/quran-text/${meta.juz}` }, "Qur'an"),
+    " / Listen",
+  ]);
+
+  const prevLink = el(
+    "a",
+    { class: "pl-nav-btn", href: surahNumber > 1 ? `${BASE_PATH}/quran-play/${surahNumber - 1}` : "#", "aria-disabled": surahNumber <= 1 },
+    "\u2039 Prev surah"
+  );
+  const nextLink = el(
+    "a",
+    { class: "pl-nav-btn", href: surahNumber < 114 ? `${BASE_PATH}/quran-play/${surahNumber + 1}` : "#", "aria-disabled": surahNumber >= 114 },
+    "Next surah \u203a"
+  );
+
+  const header = el("div", { class: "pl-header" }, [
+    prevLink,
+    el("div", { class: "pl-header-mid" }, [
+      el("span", { class: "pl-header-kicker" }, `SURAH ${surahNumber}`),
+      el("h1", { class: "pl-header-title" }, surahName),
+      el("span", { class: "pl-header-ar", dir: "rtl" }, meta.ar),
+      el("p", { class: "pl-header-sub" }, `${meta.ayahs} ayat \u00b7 ${meta.type === "Meccan" ? "Makki" : "Madani"}`),
+    ]),
+    nextLink,
+  ]);
+
+  const playAllBtn = el("button", { class: "btn btn-primary pl-play-all", type: "button" }, "\u25b6 Play Surah");
+  const autoNextRow = el("label", { class: "pl-autonext" }, [
+    el("input", { type: "checkbox", id: "plAutoNext" }),
+    " Auto-play next surah when this one ends",
+  ]);
+  const autoNextCheckbox = autoNextRow.querySelector("input");
+  autoNextCheckbox.checked = qawGetAutoNextPref();
+  autoNextCheckbox.addEventListener("change", () => qawSetAutoNextPref(autoNextCheckbox.checked));
+
+  const controls = el("div", { class: "pl-controls" }, [playAllBtn, autoNextRow]);
+  const list = el("div", { class: "pl-list" });
+  renderLoading(list);
+
+  const wrap = el("div", { class: "container text-container pl-container" }, [crumb, header, controls, list]);
+
+  if (opts && opts.internalNav) {
+    const oldWrap = app.querySelector(".pl-container");
+    if (oldWrap) oldWrap.replaceWith(wrap);
+    else app.appendChild(el("main", {}, wrap));
+  } else {
+    app.appendChild(el("main", {}, wrap));
+  }
+
+  try {
+    const ayahs = await fetchSurahAyahs(surahNumber);
+    list.innerHTML = "";
+
+    const rows = ayahs.map((v, idx) =>
+      el("div", { class: "pl-row", id: `pl-${idx}` }, [
+        el("span", { class: "pl-row-num" }, String(v.a)),
+        el("div", { class: "pl-row-text" }, [
+          el("span", { class: "pl-row-ar", dir: "rtl" }, v.ar),
+          el("span", { class: "pl-row-translit" }, v.t),
+        ]),
+      ])
+    );
+    rows.forEach((r) => list.appendChild(r));
+
+    function setPlayingRow(idx) {
+      rows.forEach((r, i) => r.classList.toggle("is-playing", i === idx));
+      if (idx >= 0 && rows[idx]) rows[idx].scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function playFrom(idx) {
+      if (idx >= ayahs.length) {
+        setPlayingRow(-1);
+        playAllBtn.textContent = "\u25b6 Play Surah";
+        if (qawGetAutoNextPref() && surahNumber < 114) {
+          const nextSurah = surahNumber + 1;
+          history.replaceState(null, "", `${BASE_PATH}/quran-play/${nextSurah}`);
+          renderQuranPlayer(nextSurah, { autoplay: true, internalNav: true });
+        }
+        return;
+      }
+      setPlayingRow(idx);
+      const v = ayahs[idx];
+      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playAllBtn, "\u25b6 Play Surah", v.u, () => playFrom(idx + 1));
+    }
+
+    playAllBtn.addEventListener("click", () => {
+      if (qawAudioActiveBtn === playAllBtn) {
+        qawPlayAudioUrl(qawAudioActiveUrl, playAllBtn, "\u25b6 Play Surah"); // toggles pause/resume in place
+        return;
+      }
+      playFrom(0);
+    });
+
+    if (autoplay) playFrom(0);
+  } catch (e) {
+    list.innerHTML = "";
+    renderError(list, e.message);
   }
 }
 
