@@ -1348,21 +1348,23 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
+  border: 1px solid transparent;
   border-radius: 9px;
   font-family: var(--font-body);
   font-size: 13.5px;
   font-weight: 500;
   color: #cddbd3;
-  transition: background var(--fast), color var(--fast);
+  transition: background var(--fast), color var(--fast), border-color var(--fast);
 }
 .qaw-nav-item:hover { background: rgba(184, 134, 46, 0.14); color: #f1ead7; }
 .qaw-nav-item.is-active {
-  background: var(--gold);
-  color: var(--emerald-deep);
+  background: rgba(184, 134, 46, 0.08);
+  border-color: var(--gold);
+  color: var(--gold-soft);
   font-weight: 700;
 }
-.qaw-nav-item.is-active .qaw-nav-dot { background: var(--emerald-deep); }
-.qaw-nav-item.is-active .qaw-nav-meta { color: rgba(18, 52, 48, 0.65); }
+.qaw-nav-item.is-active .qaw-nav-dot { background: var(--gold); }
+.qaw-nav-item.is-active .qaw-nav-meta { color: rgba(217, 185, 120, 0.7); }
 .qaw-nav-dot {
   width: 7px;
   height: 7px;
@@ -1386,7 +1388,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   font-size: 10.5px;
   font-weight: 700;
 }
-.qaw-nav-item.is-active .qaw-nav-badge { background: var(--emerald-deep); color: var(--gold-soft); }
+.qaw-nav-item.is-active .qaw-nav-badge { background: var(--gold); color: var(--emerald-deep); }
 
 .qaw-sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
 .qaw-streak-box {
@@ -2136,4 +2138,64 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
 @media (max-width: 480px) {
   .qaw-install-banner { left: 10px; right: 10px; bottom: 10px; padding: 11px 12px; }
   .qaw-install-text { font-size: 12.5px; }
+}
+
+/* =============================================================================
+   QuranAW — Islamic Calendar page (v1). Namespaced .ic-*, reuses .pt-card
+   and .pt-note from the Prayer Times page for a consistent card look.
+   ========================================================================== */
+.ic-hijri {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 20px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.ic-hijri-day {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+}
+.ic-hijri-mid { display: flex; flex-direction: column; gap: 4px; }
+.ic-hijri-month { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--text-strong); }
+.ic-hijri-ar { font-family: var(--font-display); font-size: 16px; color: rgba(var(--ink-rgb), 0.6); }
+
+.ic-gregorian {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.ic-gregorian-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(var(--ink-rgb), 0.5);
+}
+.ic-gregorian-date { font-size: 14.5px; color: var(--ink); }
+
+.ic-holidays {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ic-holidays-label { font-size: 13px; color: rgba(var(--ink-rgb), 0.6); }
+.ic-holiday-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(184, 134, 46, 0.14);
+  color: var(--gold);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .ic-hijri-day { font-size: 44px; }
+  .ic-hijri-month { font-size: 19px; }
 }

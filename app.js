@@ -87,7 +87,7 @@ const HADITH_BOOKS = [
     arabic: "سنن أبي داود",
     group: "major",
     count: 5274,
-    status: "soon",
+    status: "ready",
     shortDesc:
       "Sunan Abi Dawud is a collection of hadith compiled by Imam Abu Dawud Sulaiman ibn al-Ash\u2019ath as-Sijistani (rahimahullah). It is one of the six canonical hadith collections (Kutub as-Sittah) and contains 5,274 hadith in 43 books.",
     extraLinks: [
@@ -123,7 +123,7 @@ const HADITH_BOOKS = [
     arabic: "سنن ابن ماجه",
     group: "major",
     count: 4341,
-    status: "soon",
+    status: "ready",
     shortDesc:
       "Sunan Ibn Majah is a collection of hadith compiled by Imam Muhammad bin Yazid Ibn Majah al-Qazvini (rahimahullah). It is widely regarded as the sixth of the six canonical collections of hadith (Kutub as-Sittah) and contains 4,341 hadith arranged in 37 books.",
   },
@@ -132,7 +132,8 @@ const HADITH_BOOKS = [
     name: "Muwatta Malik",
     arabic: "موطأ مالك",
     group: "major",
-    status: "soon",
+    count: 1840,
+    status: "ready",
     shortDesc:
       "Al-Muwatta of Imam Malik is one of the earliest and most influential collections of hadith and Islamic jurisprudence, compiled by Imam Malik ibn Anas (rahimahullah). It contains hadith, statements of the Companions, opinions of the Tabi'in, and the legal practice of the people of Madinah.",
   },
@@ -2604,6 +2605,8 @@ function route() {
     renderSearch(parts[1] ? decodeURIComponent(parts[1]) : "");
   } else if (parts[0] === "prayer-times") {
     renderPrayerTimes();
+  } else if (parts[0] === "islamic-calendar") {
+    renderIslamicCalendar();
   } else if (parts[0] === "quran-play") {
     renderQuranPlayer(parts[1] ? parseInt(parts[1], 10) || 1 : 1);
   } else if (parts[0] === "favorites") {
@@ -3056,6 +3059,87 @@ async function renderPrayerTimes() {
     locationLine.textContent = "Couldn't determine your location.";
     card.innerHTML = "";
     renderError(card, "Enable location access in your browser and reload this page to see prayer times.");
+  }
+}
+
+/* --- Islamic (Hijri) calendar --------------------------------------------
+   Converts today's date (in the visitor's own local timezone, so the day
+   boundary matches where they actually are) to the Hijri calendar via the
+   Aladhan API's gToH endpoint - free, no key, CORS-open. This is a
+   calendar conversion (Umm al-Qura based), not a moon-sighting service, so
+   it may occasionally differ by a day from local moon-sighting announcements
+   in your region - worth confirming with your local masjid around Ramadan
+   and Eid. */
+async function qawFetchHijriDate(date) {
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  const res = await fetch(`https://api.aladhan.com/v1/gToH?date=${dd}-${mm}-${yyyy}`);
+  if (!res.ok) throw new Error(`Calendar API error (${res.status})`);
+  const json = await res.json();
+  return json.data;
+}
+
+async function renderIslamicCalendar() {
+  setMeta({
+    title: "Islamic Calendar",
+    description: "Today's Hijri (Islamic) calendar date, converted for your local day.",
+  });
+  app.innerHTML = "";
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: `${BASE_PATH}/` }, "Library"), " / Islamic Calendar"]);
+
+  const card = el("div", { class: "pt-card ic-card" });
+  renderLoading(card);
+
+  const wrap = el("div", { class: "container text-container" }, [
+    crumb,
+    el("h1", { class: "page-title" }, "Islamic Calendar"),
+    card,
+  ]);
+  app.appendChild(el("main", {}, wrap));
+
+  try {
+    const data = await qawFetchHijriDate(new Date());
+    const h = data.hijri;
+    const g = data.gregorian;
+
+    card.innerHTML = "";
+    card.appendChild(
+      el("div", { class: "ic-hijri" }, [
+        el("span", { class: "ic-hijri-day" }, h.day),
+        el("div", { class: "ic-hijri-mid" }, [
+          el("span", { class: "ic-hijri-month" }, `${h.month.en} ${h.year} AH`),
+          el("span", { class: "ic-hijri-ar", dir: "rtl" }, `${h.weekday.ar} \u00b7 ${h.month.ar} ${h.year}`),
+        ]),
+      ])
+    );
+
+    card.appendChild(
+      el("div", { class: "ic-gregorian" }, [
+        el("span", { class: "ic-gregorian-label" }, "Gregorian" ),
+        el("span", { class: "ic-gregorian-date" }, `${h.weekday.en}, ${g.day} ${g.month.en} ${g.year} CE`),
+      ])
+    );
+
+    if (h.holidays && h.holidays.length) {
+      card.appendChild(
+        el("div", { class: "ic-holidays" }, [
+          el("span", { class: "ic-holidays-label" }, "Today marks:"),
+          ...h.holidays.map((name) => el("span", { class: "ic-holiday-chip" }, name)),
+        ])
+      );
+    }
+
+    card.appendChild(
+      el(
+        "p",
+        { class: "pt-note" },
+        "Based on your device's local date and the standard Hijri calendar calculation. Moon-sighting announcements in your area may differ by a day \u2014 please confirm with your local masjid, especially around Ramadan and Eid."
+      )
+    );
+  } catch (e) {
+    card.innerHTML = "";
+    renderError(card, "Couldn't load today's Hijri date right now \u2014 try refreshing.");
   }
 }
 
