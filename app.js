@@ -403,15 +403,128 @@ function updateFavoritesBadge() {
   badge.style.display = count > 0 ? "" : "none";
 }
 
+//replace code 
+/* =============================================================================
+   QuranAW — new home page
+   Drop-in replacement for renderHome() in app.js (currently lines ~399-480).
+   Uses only helpers that already exist in app.js: el, cfg, setMeta,
+   githubList, naturalSort, titleFromSlug, getProgress, partHref,
+   startHadithTicker, renderLoading, renderError, PROGRESS_PREFIX, getFavorites.
+   Requires the CSS in deploy/home.css appended to style.css.
+   ========================================================================== */
+
+/* --- Verse of the day: rotates by date, no network call --------------------- */
+const QAW_DAILY_VERSES = [
+  {
+    arabic: "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
+    hinglish: "Beshak Allah sabr karne walon ke saath hai.",
+    ref: "Al-Baqarah 2:153",
+  },
+  {
+    arabic: "وَيَرْزُقْهُ مِنْ حَيْثُ لَا يَحْتَسِبُ",
+    hinglish: "Aur use wahan se rizq deta hai jahan se woh soch bhi nahi sakta.",
+    ref: "At-Talaq 65:3",
+  },
+  {
+    arabic: "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا",
+    hinglish: "Beshak har mushkil ke saath aasani hai.",
+    ref: "Ash-Sharh 94:5",
+  },
+  {
+    arabic: "وَقُل رَّبِّ زِدْنِي عِلْمًا",
+    hinglish: "Aur kahiye: ae mere Rabb, mera ilm badha de.",
+    ref: "Ta-Ha 20:114",
+  },
+  {
+    arabic: "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ",
+    hinglish: "Yaad rakho — Allah ke zikr se hi dilon ko sukoon milta hai.",
+    ref: "Ar-Ra'd 13:28",
+  },
+  {
+    arabic: "وَاللَّهُ خَيْرُ الرَّازِقِينَ",
+    hinglish: "Aur Allah hi sabse behtar rizq dene wala hai.",
+    ref: "Al-Jumu'ah 62:11",
+  },
+  {
+    arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً",
+    hinglish: "Ae hamare Rabb, humein duniya mein behtari de.",
+    ref: "Al-Baqarah 2:201",
+  },
+];
+
+function qawVerseOfTheDay() {
+  const start = new Date(new Date().getFullYear(), 0, 0);
+  const day = Math.floor((new Date() - start) / 86400000);
+  return QAW_DAILY_VERSES[day % QAW_DAILY_VERSES.length];
+}
+
+/* --- Reading streak: local-only day log ------------------------------------ */
+const QAW_DAYS_KEY = "qaw:days";
+
+function qawTouchStreak() {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    let days = JSON.parse(localStorage.getItem(QAW_DAYS_KEY) || "[]");
+    if (days[days.length - 1] !== today) days.push(today);
+    days = days.slice(-400);
+    localStorage.setItem(QAW_DAYS_KEY, JSON.stringify(days));
+    return days;
+  } catch (e) {
+    return [];
+  }
+}
+
+function qawStreakInfo() {
+  const days = qawTouchStreak();
+  const set = new Set(days);
+  const iso = (d) => d.toISOString().slice(0, 10);
+  let streak = 0;
+  const cursor = new Date();
+  while (set.has(iso(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  const week = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    week.push(set.has(iso(d)));
+  }
+  return { streak, week };
+}
+
+/* --- Most recently read book across all stored progress -------------------- */
+function qawLatestProgress() {
+  let best = null;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || key.indexOf(PROGRESS_PREFIX) !== 0) continue;
+      const slug = key.slice(PROGRESS_PREFIX.length);
+      const p = getProgress(slug);
+      if (!p) continue;
+      if (!best || (p.updatedAt || 0) > (best.updatedAt || 0)) {
+        best = Object.assign({ slug }, p);
+      }
+    }
+  } catch (e) {
+    /* storage unavailable */
+  }
+  return best;
+}
+
+/* --- Home ------------------------------------------------------------------ */
 async function renderHome() {
   setMeta({
     full: "QuranAnyWhere — Read the Qur'an and Hadith Online, Free",
-    description: "Read the Qur'an juz by juz and explore Hinglish translations of Sahih al-Bukhari, Sahih Muslim & more hadith collections — free, anywhere, on any device.",
+    description:
+      "Read the Qur'an juz by juz and explore Hinglish translations of Sahih al-Bukhari, Sahih Muslim & more hadith collections — free, anywhere, on any device.",
   });
   app.innerHTML = "";
+
   const hero = el("section", { class: "hero" }, [
     el("div", { class: "container" }, [
-      el("p", { class: "eyebrow" }, "\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u0647\u0650 \u0627\u0644\u0631\u0651\u064e\u062d\u0652\u0645\u064e\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064e\u062d\u0650\u064a\u0645\u0650"),
+      el("p", { class: "eyebrow" }, "بِسْمِ اللّهِ الرَّحْمَٰنِ الرَّحِيمِ"),
       el("h1", {}, cfg.siteTitle),
       el("p", {}, cfg.tagline),
     ]),
@@ -422,46 +535,141 @@ async function renderHome() {
   app.appendChild(ticker);
   startHadithTicker(ticker);
 
-  const main = el("main", { class: "container" });
+  const main = el("main", { class: "container home" });
   app.appendChild(main);
-  renderLoading(main);
+
+  /* Row 1 — continue reading + verse of the day */
+  const progress = qawLatestProgress();
+  const { streak, week } = qawStreakInfo();
+  const verse = qawVerseOfTheDay();
+
+  const resumeChildren = [
+    el("span", { class: "panel-kicker" }, progress ? "Continue reading" : "Start reading"),
+    el(
+      "h2",
+      { class: "resume-title" },
+      progress ? titleFromSlug(progress.file) : "The Holy Qur'an"
+    ),
+    el(
+      "p",
+      { class: "resume-meta" },
+      progress
+        ? `${titleFromSlug(progress.slug)} · page ${progress.page}`
+        : "Juz by juz, Arabic with Hinglish translation."
+    ),
+    el("div", { class: "resume-actions" }, [
+      el(
+        "a",
+        {
+          class: "btn btn-cream",
+          href: progress ? partHref(progress.slug, progress.file, progress.page) : "/quran-text/1",
+        },
+        progress ? "Resume" : "Read Qur'an"
+      ),
+      el("a", { class: "btn btn-ghost", href: "/hadith" }, "Browse hadith"),
+    ]),
+  ];
+
+  if (streak > 1) {
+    resumeChildren.push(
+      el("div", { class: "streak" }, [
+        el("span", { class: "streak-count" }, String(streak)),
+        el("span", { class: "streak-label" }, "din lagatar · MashaAllah"),
+        el(
+          "div",
+          { class: "streak-week", "aria-hidden": "true" },
+          week.map((on) => el("span", { class: on ? "streak-dot is-on" : "streak-dot" }))
+        ),
+      ])
+    );
+  }
+
+  const resume = el("section", { class: "panel panel-emerald" }, resumeChildren);
+
+  const daily = el("section", { class: "panel panel-verse" }, [
+    el("span", { class: "panel-kicker panel-kicker-dark" }, "Verse of the day"),
+    el("p", { class: "verse-arabic", dir: "rtl" }, verse.arabic),
+    el("p", { class: "verse-trans" }, verse.hinglish),
+    el("div", { class: "verse-foot" }, [
+      el("span", { class: "verse-ref" }, verse.ref),
+      el("a", { class: "verse-link", href: "/quran-text/1" }, "Read in context →"),
+    ]),
+  ]);
+
+  main.appendChild(el("div", { class: "home-top" }, [resume, daily]));
+
+  /* Row 2 — quick tiles */
+  const favCount = (typeof getFavorites === "function" ? getFavorites() : []).length;
+  const tiles = [
+    ["/quran-text/1", "Read Qur'an", "Juz by juz, apni raftaar se", "tile-emerald"],
+    ["/hadith", "Hadith", "Bukhari, Muslim aur 8 more", "tile-gold"],
+    ["/duas", "Dua & Azkar", "Roz ke duas, har waqt ke liye", "tile-sage"],
+    ["/favorites", "Favorites", favCount ? `${favCount} saved` : "Jo save karein, yahan milega", "tile-clay"],
+  ];
+  main.appendChild(
+    el(
+      "div",
+      { class: "tile-row" },
+      tiles.map(([href, label, sub, tint]) =>
+        el("a", { class: `tile ${tint}`, href }, [
+          el("span", { class: "tile-mark", "aria-hidden": "true" }),
+          el("span", { class: "tile-label" }, label),
+          el("span", { class: "tile-sub" }, sub),
+        ])
+      )
+    )
+  );
+
+  /* Row 3 — the library (existing behaviour, unchanged data source) */
+  main.appendChild(
+    el("div", { class: "section-head" }, [
+      el("h2", { class: "section-title" }, "Library"),
+      el("a", { class: "section-link", href: "/hadith" }, "All hadith books"),
+    ])
+  );
+
+  const listWrap = el("div");
+  main.appendChild(listWrap);
+  renderLoading(listWrap);
 
   try {
     const items = await githubList("");
-    const RESERVED_FOLDERS = ["duas", "search-index", "quran-data", "hadith-data"]; // reserved for JSON data, not PDF folders
-    const folders = items.filter((i) => i.type === "dir" && !RESERVED_FOLDERS.includes(i.name)).sort(naturalSort);
-    main.innerHTML = "";
+    const RESERVED_FOLDERS = ["duas", "search-index", "quran-data", "hadith-data"];
+    const folders = items
+      .filter((i) => i.type === "dir" && !RESERVED_FOLDERS.includes(i.name))
+      .sort(naturalSort);
+    listWrap.innerHTML = "";
 
     if (folders.length === 0) {
-      main.appendChild(
-        el("p", { class: "state-msg" }, "No PDF books yet \u2014 push a folder of PDFs to your repo and refresh.")
+      listWrap.appendChild(
+        el("p", { class: "state-msg" }, "No PDF books yet — push a folder of PDFs to your repo and refresh.")
       );
     }
 
     const grid = el("div", { class: "grid" });
     folders.forEach((folder) => {
-      const progress = getProgress(folder.name);
+      const p = getProgress(folder.name);
       const body = [
         el("span", { class: "card-kicker" }, "Book"),
         el("h2", { class: "card-title" }, titleFromSlug(folder.name)),
+        p
+          ? el("p", { class: "card-desc card-continue" }, `Continue — ${titleFromSlug(p.file)}, page ${p.page}`)
+          : el("p", { class: "card-desc" }, "Tap to view parts"),
       ];
-      if (progress) {
-        body.push(el("p", { class: "card-desc card-continue" }, `Continue \u2014 ${titleFromSlug(progress.file)}, page ${progress.page}`));
-      } else {
-        body.push(el("p", { class: "card-desc" }, "Tap to view parts"));
-      }
-      const card = el(
-        "a",
-        { class: "card", href: progress ? partHref(folder.name, progress.file, progress.page) : `${BASE_PATH}/book/${encodeURIComponent(folder.name)}` },
-        [el("div", { class: "card-spine" }), el("div", { class: "card-body" }, body)]
+      grid.appendChild(
+        el(
+          "a",
+          {
+            class: "card",
+            href: p ? partHref(folder.name, p.file, p.page) : `/book/${encodeURIComponent(folder.name)}`,
+          },
+          [el("div", { class: "card-spine" }), el("div", { class: "card-body" }, body)]
+        )
       );
-      grid.appendChild(card);
     });
 
-    // Typed (non-PDF) collections, sourced from JSON in this repo rather
-    // than a folder of files.
     grid.appendChild(
-      el("a", { class: "card", href: `${BASE_PATH}/duas` }, [
+      el("a", { class: "card", href: "/duas" }, [
         el("div", { class: "card-spine" }),
         el("div", { class: "card-body" }, [
           el("span", { class: "card-kicker" }, "Typed text"),
@@ -472,22 +680,24 @@ async function renderHome() {
     );
 
     grid.appendChild(
-      el("a", { class: "card", href: `${BASE_PATH}/hadith` }, [
+      el("a", { class: "card", href: "/hadith" }, [
         el("div", { class: "card-spine" }),
         el("div", { class: "card-body" }, [
           el("span", { class: "card-kicker" }, "Typed text"),
           el("h2", { class: "card-title" }, "Hadith Collections"),
-          el("p", { class: "card-desc" }, "Sahih al-Bukhari, Sahih Muslim & 9 more \u2014 Arabic & English"),
+          el("p", { class: "card-desc" }, "Sahih al-Bukhari, Sahih Muslim & 8 more — Arabic & English"),
         ]),
       ])
     );
 
-    main.appendChild(grid);
+    listWrap.appendChild(grid);
   } catch (e) {
-    main.innerHTML = "";
-    renderError(main, e.message);
+    listWrap.innerHTML = "";
+    renderError(listWrap, e.message);
   }
 }
+
+// relace end 
 
 async function renderBook(bookSlug) {
   setMeta({
