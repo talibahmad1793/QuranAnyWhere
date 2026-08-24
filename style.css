@@ -1,40 +1,44 @@
 /* =============================================================================
-   QuranAW — new home page styles. Append to the end of style.css and bump the
-   ?v= cache-buster on the <link> in index.html. Uses existing :root tokens.
+   QuranAW — home page styles (v2)
+   Every selector is namespaced .home-* so nothing here can touch existing
+   .tile / .btn / .verse-arabic / .verse-translit / .panel rules elsewhere in
+   style.css. Append to the END of style.css and bump the ?v= cache-buster.
    ========================================================================== */
 
-.home { padding-top: 34px; padding-bottom: 56px; }
+.container.home { padding-top: 34px; padding-bottom: 56px; }
 
 .home-top {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 18px;
   margin-bottom: 18px;
+  align-items: stretch;
 }
 
-.panel {
+.home-panel {
   border-radius: var(--radius-lg);
   padding: 30px;
   position: relative;
   overflow: hidden;
 }
 
-.panel-kicker {
+.home-kicker {
   display: block;
+  font-family: var(--font-body);
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--gold-soft);
   font-weight: 600;
 }
-.panel-kicker-dark { color: var(--gold); }
+.home-kicker-dark { color: var(--gold); }
 
-.panel-emerald {
+.home-panel-emerald {
   background: linear-gradient(180deg, var(--emerald-deep), var(--emerald));
   color: #f1ead7;
   box-shadow: var(--shadow);
 }
-.panel-emerald::after {
+.home-panel-emerald::after {
   content: "";
   position: absolute;
   right: -70px;
@@ -43,39 +47,49 @@
   height: 230px;
   border-radius: 50%;
   background: rgba(217, 185, 120, 0.1);
+  pointer-events: none;
 }
 
-.resume-title {
+.home-resume-title {
   font-family: var(--font-display);
-  font-size: clamp(26px, 3.4vw, 38px);
-  line-height: 1.14;
+  font-size: clamp(26px, 3.2vw, 36px);
+  line-height: 1.16;
   margin: 12px 0 0;
   font-weight: 700;
   position: relative;
+  color: #f1ead7;
 }
-.resume-meta {
+.home-resume-meta {
   margin: 8px 0 0;
   font-size: 14px;
   color: rgba(241, 234, 215, 0.72);
   position: relative;
 }
-.resume-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; position: relative; }
 
-.btn {
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+  position: relative;
+}
+.home-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 12px 22px;
   border-radius: 999px;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   transition: background var(--fast), color var(--fast), border-color var(--fast);
 }
-.btn-cream { background: var(--paper-raised); color: var(--emerald-deep); }
-.btn-cream:hover { background: var(--gold); color: #fffdf5; }
-.btn-ghost { border: 1px solid rgba(241, 234, 215, 0.3); color: #f1ead7; }
-.btn-ghost:hover { border-color: var(--gold); color: var(--gold-soft); }
+.home-btn-cream { background: var(--paper-raised); color: var(--emerald-deep); }
+.home-btn-cream:hover { background: var(--gold); color: #fffdf5; }
+.home-btn-ghost { border: 1px solid rgba(241, 234, 215, 0.32); color: #f1ead7; }
+.home-btn-ghost:hover { border-color: var(--gold); color: var(--gold-soft); }
 
-.streak {
+.home-streak {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -84,34 +98,35 @@
   border-top: 1px solid rgba(241, 234, 215, 0.16);
   position: relative;
 }
-.streak-count { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--gold-soft); }
-.streak-label { font-size: 13px; color: rgba(241, 234, 215, 0.7); }
-.streak-week { display: flex; gap: 5px; margin-left: auto; }
-.streak-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(241, 234, 215, 0.2); }
-.streak-dot.is-on { background: var(--gold); }
+.home-streak-count { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--gold-soft); }
+.home-streak-label { font-size: 13px; color: rgba(241, 234, 215, 0.7); }
+.home-streak-week { display: flex; gap: 5px; margin-left: auto; }
+.home-streak-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(241, 234, 215, 0.2); }
+.home-streak-dot.is-on { background: var(--gold); }
 
-.panel-verse {
+.home-panel-verse {
   background: var(--paper-raised);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
 }
-.verse-arabic {
+.home-verse-ar {
   font-family: var(--font-display);
   font-size: 27px;
   line-height: 2;
   text-align: right;
   margin: 16px 0 0;
+  color: var(--ink);
 }
-.verse-trans {
+.home-verse-tr {
   font-family: var(--font-accent);
   font-size: 18px;
   line-height: 1.55;
   margin: 14px 0 0;
   color: rgba(34, 38, 31, 0.85);
 }
-.verse-foot {
+.home-verse-foot {
   margin-top: auto;
   padding-top: 20px;
   display: flex;
@@ -119,17 +134,17 @@
   justify-content: space-between;
   gap: 12px;
 }
-.verse-ref { font-size: 13px; color: rgba(34, 38, 31, 0.55); }
-.verse-link { font-size: 13px; font-weight: 600; color: var(--emerald); border-bottom: 1px solid var(--gold); }
-.verse-link:hover { color: var(--gold); }
+.home-verse-ref { font-size: 13px; color: rgba(34, 38, 31, 0.55); }
+.home-verse-link { font-size: 13px; font-weight: 600; color: var(--emerald); border-bottom: 1px solid var(--gold); }
+.home-verse-link:hover { color: var(--gold); }
 
-.tile-row {
+.home-tiles {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-bottom: 34px;
 }
-.tile {
+.home-tile {
   background: var(--paper-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -140,36 +155,35 @@
   box-shadow: var(--shadow-sm);
   transition: transform var(--med), border-color var(--fast), box-shadow var(--med);
 }
-.tile:hover { transform: translateY(-3px); border-color: var(--gold); box-shadow: var(--shadow); }
-.tile-mark { width: 26px; height: 26px; border-radius: 8px; background: var(--emerald); }
-.tile-gold .tile-mark { background: var(--gold); }
-.tile-sage .tile-mark { background: #5c7f6f; }
-.tile-clay .tile-mark { background: #8b6f4e; }
-.tile-label { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--emerald-deep); }
-.tile-sub { font-size: 13px; line-height: 1.45; color: rgba(34, 38, 31, 0.6); }
+.home-tile:hover { transform: translateY(-3px); border-color: var(--gold); box-shadow: var(--shadow); }
+.home-tile-mark { width: 26px; height: 26px; border-radius: 8px; background: var(--emerald); }
+.home-tile.is-gold .home-tile-mark { background: var(--gold); }
+.home-tile.is-sage .home-tile-mark { background: #5c7f6f; }
+.home-tile.is-clay .home-tile-mark { background: #8b6f4e; }
+.home-tile-label { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--emerald-deep); }
+.home-tile-sub { font-family: var(--font-body); font-size: 13px; line-height: 1.45; color: rgba(34, 38, 31, 0.6); }
 
-.section-head {
+.home-section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
   margin: 0 0 16px;
 }
-.section-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0; color: var(--emerald-deep); }
-.section-link { font-size: 13px; font-weight: 600; color: var(--emerald); border-bottom: 1px solid var(--gold); }
-.section-link:hover { color: var(--gold); }
+.home-section-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0; color: var(--emerald-deep); }
+.home-section-link { font-size: 13px; font-weight: 600; color: var(--emerald); border-bottom: 1px solid var(--gold); }
+.home-section-link:hover { color: var(--gold); }
 
 @media (max-width: 900px) {
   .home-top { grid-template-columns: 1fr; }
-  .tile-row { grid-template-columns: repeat(2, 1fr); }
+  .home-tiles { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
-  .home { padding-top: 22px; }
-  .panel { padding: 22px; }
-  .verse-arabic { font-size: 23px; }
-  .verse-trans { font-size: 16px; }
-  .btn { padding: 12px 18px; }
-  .resume-actions .btn { flex: 1; justify-content: center; }
-  .streak-week { display: none; }
-  .section-title { font-size: 22px; }
+  .container.home { padding-top: 22px; }
+  .home-panel { padding: 22px; }
+  .home-verse-ar { font-size: 23px; }
+  .home-verse-tr { font-size: 16px; }
+  .home-actions .home-btn { flex: 1; }
+  .home-streak-week { display: none; }
+  .home-section-title { font-size: 22px; }
 }
