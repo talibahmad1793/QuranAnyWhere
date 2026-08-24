@@ -1570,3 +1570,247 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   .qaw-topbar-search { max-width: none; order: 1; flex-basis: 100%; }
   .qaw-theme-toggle { order: 2; }
 }
+
+/* =============================================================================
+   QuranAW — Qur'an reader (v2): two-column layout with Juz/Surah tabs, a
+   reading-settings panel, and per-verse actions. Replaces the old single
+   column .text-top-bar layout above (those rules are left in place - the
+   old .surah-header/.verse-card/.verse-arabic etc. classes are reused here,
+   not redefined). Everything new is namespaced .qr-*.
+   Append to the END of style.css and bump the ?v= cache-buster.
+   ========================================================================== */
+
+.qr-container { padding-top: 28px; }
+
+.qr-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+/* ---------- Left panel: tabs + list + reading settings ---------- */
+.qr-side {
+  position: sticky;
+  top: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 104px);
+}
+
+.qr-tabs {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(34, 38, 31, 0.06);
+  flex: none;
+}
+.qr-tab {
+  all: unset;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+  padding: 9px 0;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(34, 38, 31, 0.55);
+  transition: background var(--fast), color var(--fast);
+}
+.qr-tab.is-active { background: var(--emerald); color: #f1ead7; }
+
+.qr-list {
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow-y: auto;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+.qr-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--ink);
+  transition: background var(--fast);
+}
+.qr-list-item:hover { background: rgba(184, 134, 46, 0.1); }
+.qr-list-item.is-active { background: var(--emerald); color: #f1ead7; font-weight: 700; }
+.qr-list-num {
+  width: 20px;
+  flex: none;
+  font-size: 11.5px;
+  opacity: 0.6;
+  text-align: center;
+}
+.qr-list-item.is-active .qr-list-num { opacity: 0.85; }
+.qr-list-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qr-list-ar { font-family: var(--font-display); font-size: 15px; color: var(--gold); flex: none; }
+.qr-list-item.is-active .qr-list-ar { color: var(--gold-soft); }
+
+.qr-settings {
+  flex: none;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qr-settings-kicker {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(34, 38, 31, 0.5);
+  font-weight: 700;
+}
+.qr-size-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.qr-size-row .qr-toggle-label { flex: 1; }
+.qr-size-btn {
+  all: unset;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 15px;
+  color: var(--emerald-deep);
+}
+.qr-size-btn:hover { border-color: var(--gold); }
+.qr-size-val { font-family: var(--font-body); font-size: 13px; font-weight: 600; width: 22px; text-align: center; }
+
+.qr-toggle-row {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.qr-toggle-label { font-family: var(--font-body); font-size: 13.5px; color: var(--ink); }
+.qr-switch-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex: none;
+  border-radius: 999px;
+  background: rgba(34, 38, 31, 0.18);
+  transition: background var(--fast);
+}
+.qr-switch-track.is-on { background: var(--emerald); }
+.qr-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left var(--fast);
+  box-shadow: var(--shadow-sm);
+}
+.qr-switch-track.is-on .qr-switch-thumb { left: 18px; }
+
+/* ---------- Right panel: header + verses ---------- */
+.qr-reader { min-width: 0; }
+
+.qr-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  margin-bottom: 18px;
+}
+.qr-header-kicker {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(34, 38, 31, 0.5);
+}
+.qr-header-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--emerald-deep);
+  margin: 6px 0 4px;
+}
+.qr-header-sub { font-family: var(--font-body); font-size: 13.5px; color: rgba(34, 38, 31, 0.6); margin: 0; }
+.qr-header-ar { font-family: var(--font-display); font-size: 30px; color: var(--gold); flex: none; }
+
+.qr-verses { display: flex; flex-direction: column; }
+
+/* Arabic size is controllable via the Reading panel - falls back to the
+   existing fixed 26px .verse-arabic size if the variable isn't set. */
+.qr-verses .verse-arabic { font-size: var(--qr-arabic-size, 26px); }
+
+.qr-verse-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.qr-action { padding: 7px 14px; font-size: 12.5px; }
+.qr-action.is-active { background: var(--emerald); color: #f1ead7; border-color: var(--emerald); }
+
+@media (max-width: 900px) {
+  .qr-shell { grid-template-columns: 1fr; }
+  .qr-side { position: static; max-height: none; }
+  .qr-list { max-height: 260px; }
+  .qr-header { flex-direction: column; }
+  .qr-header-ar { align-self: flex-end; }
+}
+
+/* =============================================================================
+   Home page additions (v2): reading-progress bar under the Continue Reading
+   panel, and the Verse-of-the-day Save button reusing .btn/.btn-ghost.
+   ========================================================================== */
+.home-progress-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(241, 234, 215, 0.18);
+  margin-top: 16px;
+  overflow: hidden;
+}
+.home-progress-fill { height: 100%; background: var(--gold); }
+
+.home-verse-save {
+  border-color: rgba(34, 38, 31, 0.18);
+  color: var(--emerald-deep);
+}
+.home-verse-save.is-active { background: var(--emerald); color: #f1ead7; border-color: var(--emerald); }
+
+.home-hadith-ar {
+  font-family: var(--font-display);
+  font-size: 20px;
+  background: none;
+  padding: 0;
+  color: var(--gold);
+  text-transform: none;
+  letter-spacing: 0;
+  display: block;
+}

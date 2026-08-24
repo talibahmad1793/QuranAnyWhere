@@ -66,6 +66,8 @@ const HADITH_BOOKS = [
     name: "Sahih al-Bukhari",
     arabic: "صحيح البخاري",
     group: "major",
+    count: 7278,
+    status: "ready",
     shortDesc:
       "Sahih al-Bukhari is a collection of hadith compiled by Imam Muhammad al-Bukhari (d. 256 AH/870 CE) (rahimahullah). His collection is recognized by the overwhelming majority of the Muslim world to be the most authentic collection of reports of the Sunnah of the Prophet Muhammad (\uFDFA). It contains over 7500 hadith (with repetitions) in 97 books. The translation provided here is by Dr. M. Muhsin Khan.",
   },
@@ -74,6 +76,8 @@ const HADITH_BOOKS = [
     name: "Sahih Muslim",
     arabic: "صحيح مسلم",
     group: "major",
+    count: 7461,
+    status: "ready",
     shortDesc:
       "Sahih Muslim is a collection of hadith compiled by Imam Muslim ibn al-Hajjaj al-Naysaburi (rahimahullah). His collection is considered one of the most authentic collections of the Sunnah of the Prophet Muhammad (\uFDFA), and together with Sahih al-Bukhari forms the \u2018Sahihain\u2019 (the Two Sahihs). It contains roughly 7,500 hadith (with repetitions) in 57 books. The translation provided here is by Abdul Hamid Siddiqui.",
   },
@@ -82,6 +86,8 @@ const HADITH_BOOKS = [
     name: "Sunan Abi Dawud",
     arabic: "سنن أبي داود",
     group: "major",
+    count: 5274,
+    status: "soon",
     shortDesc:
       "Sunan Abi Dawud is a collection of hadith compiled by Imam Abu Dawud Sulaiman ibn al-Ash\u2019ath as-Sijistani (rahimahullah). It is one of the six canonical hadith collections (Kutub as-Sittah) and contains 5,274 hadith in 43 books.",
     extraLinks: [
@@ -96,6 +102,8 @@ const HADITH_BOOKS = [
     name: "Jami' at-Tirmidhi",
     arabic: "جامع الترمذي",
     group: "major",
+    count: 3998,
+    status: "ready",
     shortDesc:
       "Jami' at-Tirmidhi is a collection of hadith compiled by Imam Abu 'Isa Muhammad at-Tirmidhi (rahimahullah). It is one of the six canonical collections of hadith (Kutub as-Sittah) and contains roughly 4,400 hadith (with repetitions) in 46 books.",
   },
@@ -104,6 +112,8 @@ const HADITH_BOOKS = [
     name: "Sunan an-Nasa'i",
     arabic: "سنن النسائي",
     group: "major",
+    count: 5683,
+    status: "progress",
     shortDesc:
       "Sunan an-Nasa'i is a collection of hadith compiled by Imam Ahmad an-Nasa'i (rahimahullah). It is unanimously regarded as one of the six canonical collections of hadith (Kutub as-Sittah) and contains roughly 5,700 hadith (with repetitions) in 52 books.",
   },
@@ -112,6 +122,8 @@ const HADITH_BOOKS = [
     name: "Sunan Ibn Majah",
     arabic: "سنن ابن ماجه",
     group: "major",
+    count: 4341,
+    status: "soon",
     shortDesc:
       "Sunan Ibn Majah is a collection of hadith compiled by Imam Muhammad bin Yazid Ibn Majah al-Qazvini (rahimahullah). It is widely regarded as the sixth of the six canonical collections of hadith (Kutub as-Sittah) and contains 4,341 hadith arranged in 37 books.",
   },
@@ -120,6 +132,7 @@ const HADITH_BOOKS = [
     name: "Muwatta Malik",
     arabic: "موطأ مالك",
     group: "major",
+    status: "soon",
     shortDesc:
       "Al-Muwatta of Imam Malik is one of the earliest and most influential collections of hadith and Islamic jurisprudence, compiled by Imam Malik ibn Anas (rahimahullah). It contains hadith, statements of the Companions, opinions of the Tabi'in, and the legal practice of the people of Madinah.",
   },
@@ -128,6 +141,8 @@ const HADITH_BOOKS = [
     name: "Sunan ad-Darimi",
     arabic: "سنن الدارمي",
     group: "major",
+    count: 3406,
+    status: "ready",
     shortDesc:
       "Sunan ad-Darimi is a collection of hadith compiled by Imam Abu Muhammad Abd Allah ibn Abd al-Rahman ad-Darimi (rahimahullah). It contains roughly 3,400 hadith arranged across the major books of fiqh and belief.",
   },
@@ -176,6 +191,128 @@ const SURAH_NAMES = [
   "Al-Asr", "Al-Humazah", "Al-Fil", "Quraish", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr",
   "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas",
 ];
+
+// Per-surah metadata: Arabic name, revelation type, ayah count, and the juz
+// number this surah *starts* in (computed from this project's own
+// quran-data files) - used to build the Surah tab list and its links.
+const SURAH_META = [
+  null, // 1-indexed
+  { ar: "الفاتحة", type: "Meccan", ayahs: 7, juz: 1 },
+  { ar: "البقرة", type: "Medinan", ayahs: 286, juz: 1 },
+  { ar: "آل عمران", type: "Medinan", ayahs: 200, juz: 3 },
+  { ar: "النساء", type: "Medinan", ayahs: 176, juz: 4 },
+  { ar: "المائدة", type: "Medinan", ayahs: 120, juz: 6 },
+  { ar: "الأنعام", type: "Meccan", ayahs: 165, juz: 7 },
+  { ar: "الأعراف", type: "Meccan", ayahs: 206, juz: 8 },
+  { ar: "الأنفال", type: "Medinan", ayahs: 75, juz: 9 },
+  { ar: "التوبة", type: "Medinan", ayahs: 129, juz: 10 },
+  { ar: "يونس", type: "Meccan", ayahs: 109, juz: 11 },
+  { ar: "هود", type: "Meccan", ayahs: 123, juz: 11 },
+  { ar: "يوسف", type: "Meccan", ayahs: 111, juz: 12 },
+  { ar: "الرعد", type: "Medinan", ayahs: 43, juz: 13 },
+  { ar: "إبراهيم", type: "Meccan", ayahs: 52, juz: 13 },
+  { ar: "الحجر", type: "Meccan", ayahs: 99, juz: 14 },
+  { ar: "النحل", type: "Meccan", ayahs: 128, juz: 14 },
+  { ar: "الإسراء", type: "Meccan", ayahs: 111, juz: 15 },
+  { ar: "الكهف", type: "Meccan", ayahs: 110, juz: 15 },
+  { ar: "مريم", type: "Meccan", ayahs: 98, juz: 16 },
+  { ar: "طه", type: "Meccan", ayahs: 135, juz: 16 },
+  { ar: "الأنبياء", type: "Meccan", ayahs: 112, juz: 17 },
+  { ar: "الحج", type: "Medinan", ayahs: 78, juz: 17 },
+  { ar: "المؤمنون", type: "Meccan", ayahs: 118, juz: 18 },
+  { ar: "النور", type: "Medinan", ayahs: 64, juz: 18 },
+  { ar: "الفرقان", type: "Meccan", ayahs: 77, juz: 18 },
+  { ar: "الشعراء", type: "Meccan", ayahs: 227, juz: 19 },
+  { ar: "النمل", type: "Meccan", ayahs: 93, juz: 19 },
+  { ar: "القصص", type: "Meccan", ayahs: 88, juz: 20 },
+  { ar: "العنكبوت", type: "Meccan", ayahs: 69, juz: 20 },
+  { ar: "الروم", type: "Meccan", ayahs: 60, juz: 21 },
+  { ar: "لقمان", type: "Meccan", ayahs: 34, juz: 21 },
+  { ar: "السجدة", type: "Meccan", ayahs: 30, juz: 21 },
+  { ar: "الأحزاب", type: "Medinan", ayahs: 73, juz: 21 },
+  { ar: "سبأ", type: "Meccan", ayahs: 54, juz: 22 },
+  { ar: "فاطر", type: "Meccan", ayahs: 45, juz: 22 },
+  { ar: "يس", type: "Meccan", ayahs: 83, juz: 22 },
+  { ar: "الصافات", type: "Meccan", ayahs: 182, juz: 23 },
+  { ar: "ص", type: "Meccan", ayahs: 88, juz: 23 },
+  { ar: "الزمر", type: "Meccan", ayahs: 75, juz: 23 },
+  { ar: "غافر", type: "Meccan", ayahs: 85, juz: 24 },
+  { ar: "فصلت", type: "Meccan", ayahs: 54, juz: 24 },
+  { ar: "الشورى", type: "Meccan", ayahs: 53, juz: 25 },
+  { ar: "الزخرف", type: "Meccan", ayahs: 89, juz: 25 },
+  { ar: "الدخان", type: "Meccan", ayahs: 59, juz: 25 },
+  { ar: "الجاثية", type: "Meccan", ayahs: 37, juz: 25 },
+  { ar: "الأحقاف", type: "Meccan", ayahs: 35, juz: 26 },
+  { ar: "محمد", type: "Medinan", ayahs: 38, juz: 26 },
+  { ar: "الفتح", type: "Medinan", ayahs: 29, juz: 26 },
+  { ar: "الحجرات", type: "Medinan", ayahs: 18, juz: 26 },
+  { ar: "ق", type: "Meccan", ayahs: 45, juz: 26 },
+  { ar: "الذاريات", type: "Meccan", ayahs: 60, juz: 26 },
+  { ar: "الطور", type: "Meccan", ayahs: 49, juz: 27 },
+  { ar: "النجم", type: "Meccan", ayahs: 62, juz: 27 },
+  { ar: "القمر", type: "Meccan", ayahs: 55, juz: 27 },
+  { ar: "الرحمن", type: "Medinan", ayahs: 78, juz: 27 },
+  { ar: "الواقعة", type: "Meccan", ayahs: 96, juz: 27 },
+  { ar: "الحديد", type: "Medinan", ayahs: 29, juz: 27 },
+  { ar: "المجادلة", type: "Medinan", ayahs: 22, juz: 28 },
+  { ar: "الحشر", type: "Medinan", ayahs: 24, juz: 28 },
+  { ar: "الممتحنة", type: "Medinan", ayahs: 13, juz: 28 },
+  { ar: "الصف", type: "Medinan", ayahs: 14, juz: 28 },
+  { ar: "الجمعة", type: "Medinan", ayahs: 11, juz: 28 },
+  { ar: "المنافقون", type: "Medinan", ayahs: 11, juz: 28 },
+  { ar: "التغابن", type: "Medinan", ayahs: 18, juz: 28 },
+  { ar: "الطلاق", type: "Medinan", ayahs: 12, juz: 28 },
+  { ar: "التحريم", type: "Medinan", ayahs: 12, juz: 28 },
+  { ar: "الملك", type: "Meccan", ayahs: 30, juz: 29 },
+  { ar: "القلم", type: "Meccan", ayahs: 52, juz: 29 },
+  { ar: "الحاقة", type: "Meccan", ayahs: 52, juz: 29 },
+  { ar: "المعارج", type: "Meccan", ayahs: 44, juz: 29 },
+  { ar: "نوح", type: "Meccan", ayahs: 28, juz: 29 },
+  { ar: "الجن", type: "Meccan", ayahs: 28, juz: 29 },
+  { ar: "المزمل", type: "Meccan", ayahs: 20, juz: 29 },
+  { ar: "المدثر", type: "Meccan", ayahs: 56, juz: 29 },
+  { ar: "القيامة", type: "Meccan", ayahs: 40, juz: 29 },
+  { ar: "الإنسان", type: "Medinan", ayahs: 31, juz: 29 },
+  { ar: "المرسلات", type: "Meccan", ayahs: 50, juz: 29 },
+  { ar: "النبأ", type: "Meccan", ayahs: 40, juz: 30 },
+  { ar: "النازعات", type: "Meccan", ayahs: 46, juz: 30 },
+  { ar: "عبس", type: "Meccan", ayahs: 42, juz: 30 },
+  { ar: "التكوير", type: "Meccan", ayahs: 29, juz: 30 },
+  { ar: "الإنفطار", type: "Meccan", ayahs: 19, juz: 30 },
+  { ar: "المطففين", type: "Meccan", ayahs: 36, juz: 30 },
+  { ar: "الإنشقاق", type: "Meccan", ayahs: 25, juz: 30 },
+  { ar: "البروج", type: "Meccan", ayahs: 22, juz: 30 },
+  { ar: "الطارق", type: "Meccan", ayahs: 17, juz: 30 },
+  { ar: "الأعلى", type: "Meccan", ayahs: 19, juz: 30 },
+  { ar: "الغاشية", type: "Meccan", ayahs: 26, juz: 30 },
+  { ar: "الفجر", type: "Meccan", ayahs: 30, juz: 30 },
+  { ar: "البلد", type: "Meccan", ayahs: 20, juz: 30 },
+  { ar: "الشمس", type: "Meccan", ayahs: 15, juz: 30 },
+  { ar: "الليل", type: "Meccan", ayahs: 21, juz: 30 },
+  { ar: "الضحى", type: "Meccan", ayahs: 11, juz: 30 },
+  { ar: "الشرح", type: "Meccan", ayahs: 8, juz: 30 },
+  { ar: "التين", type: "Meccan", ayahs: 8, juz: 30 },
+  { ar: "العلق", type: "Meccan", ayahs: 19, juz: 30 },
+  { ar: "القدر", type: "Meccan", ayahs: 5, juz: 30 },
+  { ar: "البينة", type: "Medinan", ayahs: 8, juz: 30 },
+  { ar: "الزلزلة", type: "Medinan", ayahs: 8, juz: 30 },
+  { ar: "العاديات", type: "Meccan", ayahs: 11, juz: 30 },
+  { ar: "القارعة", type: "Meccan", ayahs: 11, juz: 30 },
+  { ar: "التكاثر", type: "Meccan", ayahs: 8, juz: 30 },
+  { ar: "العصر", type: "Meccan", ayahs: 3, juz: 30 },
+  { ar: "الهمزة", type: "Meccan", ayahs: 9, juz: 30 },
+  { ar: "الفيل", type: "Meccan", ayahs: 5, juz: 30 },
+  { ar: "قريش", type: "Meccan", ayahs: 4, juz: 30 },
+  { ar: "الماعون", type: "Meccan", ayahs: 7, juz: 30 },
+  { ar: "الكوثر", type: "Meccan", ayahs: 3, juz: 30 },
+  { ar: "الكافرون", type: "Meccan", ayahs: 6, juz: 30 },
+  { ar: "النصر", type: "Medinan", ayahs: 3, juz: 30 },
+  { ar: "المسد", type: "Meccan", ayahs: 5, juz: 30 },
+  { ar: "الإخلاص", type: "Meccan", ayahs: 4, juz: 30 },
+  { ar: "الفلق", type: "Meccan", ayahs: 5, juz: 30 },
+  { ar: "الناس", type: "Meccan", ayahs: 6, juz: 30 },
+];
+
 
 const app = document.getElementById("app");
 
@@ -342,6 +479,37 @@ function partHref(bookSlug, fileName, page) {
   return page && page > 1 ? `${base}/page/${page}` : base;
 }
 
+// --- Qur'an (JSON reader) reading progress - separate from the PDF-page
+// progress above. Tracks the last ayah the visitor scrolled to within a
+// juz, plus how far through that juz's ayah list they've reached, so the
+// home "Continue reading" panel can resume at the right place.
+const QURAN_PROGRESS_SLUG = "quran-text";
+
+function getQuranProgress() {
+  return getProgress(QURAN_PROGRESS_SLUG);
+}
+
+function setQuranProgress(juz, s, a, percent) {
+  try {
+    localStorage.setItem(
+      PROGRESS_PREFIX + QURAN_PROGRESS_SLUG,
+      JSON.stringify({ juz, s, a, percent, updatedAt: Date.now() })
+    );
+  } catch (e) {
+    /* storage unavailable */
+  }
+}
+
+function qawRelativeTime(ts) {
+  const diffMin = Math.round((Date.now() - ts) / 60000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `${diffH} hour${diffH > 1 ? "s" : ""} ago`;
+  const diffD = Math.round(diffH / 24);
+  return `${diffD} day${diffD > 1 ? "s" : ""} ago`;
+}
+
 // --- Favorite hadith (kept in the visitor's own browser only, like reading
 // progress above). We only store the identity (which book/section/hadith),
 // not the hadith text itself - the Favorites page re-loads the real hadith
@@ -403,6 +571,36 @@ function updateFavoritesBadge() {
   badge.style.display = count > 0 ? "" : "none";
 }
 
+// --- Favorite ayah (Qur'an verses) - shares the same FAVORITES_KEY store as
+// hadith favorites above, distinguished by an "ayah:" id prefix and a
+// kind:"ayah" field so renderFavorites() can render each kind correctly.
+// Only the identity + which juz file it lives in is stored; the actual
+// Arabic/translation text is re-fetched from quran-data at display time.
+function ayahFavoriteId(s, a) {
+  return `ayah:${s}:${a}`;
+}
+
+function isAyahFavorited(s, a) {
+  const id = ayahFavoriteId(s, a);
+  return getFavorites().some((f) => f.id === id);
+}
+
+function toggleAyahFavorite(s, a, meta) {
+  const id = ayahFavoriteId(s, a);
+  const list = getFavorites();
+  const idx = list.findIndex((f) => f.id === id);
+  if (idx >= 0) {
+    list.splice(idx, 1);
+    saveFavorites(list);
+    updateFavoritesBadge();
+    return false;
+  }
+  list.unshift(Object.assign({ id, kind: "ayah", s, a, savedAt: Date.now() }, meta));
+  saveFavorites(list);
+  updateFavoritesBadge();
+  return true;
+}
+
 //replace code 
 /* =============================================================================
    QuranAW — new home page  (v2 — BASE_PATH aware, fully namespaced)
@@ -415,13 +613,13 @@ function updateFavoritesBadge() {
    ========================================================================== */
 
 const QAW_DAILY_VERSES = [
-  { arabic: "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ", hinglish: "Beshak Allah sabr karne walon ke saath hai.", ref: "Al-Baqarah 2:153" },
-  { arabic: "وَيَرْزُقْهُ مِنْ حَيْثُ لَا يَحْتَسِبُ", hinglish: "Aur use wahan se rizq deta hai jahan se woh soch bhi nahi sakta.", ref: "At-Talaq 65:3" },
-  { arabic: "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا", hinglish: "Beshak har mushkil ke saath aasani hai.", ref: "Ash-Sharh 94:5" },
-  { arabic: "وَقُل رَّبِّ زِدْنِي عِلْمًا", hinglish: "Aur kahiye: ae mere Rabb, mera ilm badha de.", ref: "Ta-Ha 20:114" },
-  { arabic: "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ", hinglish: "Yaad rakho — Allah ke zikr se hi dilon ko sukoon milta hai.", ref: "Ar-Ra'd 13:28" },
-  { arabic: "وَاللَّهُ خَيْرُ الرَّازِقِينَ", hinglish: "Aur Allah hi sabse behtar rizq dene wala hai.", ref: "Al-Jumu'ah 62:11" },
-  { arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً", hinglish: "Ae hamare Rabb, humein duniya mein behtari de.", ref: "Al-Baqarah 2:201" },
+  { s: 2, a: 153, juz: 2, arabic: "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ", hinglish: "Beshak Allah sabr karne walon ke saath hai.", ref: "Al-Baqarah 2:153" },
+  { s: 65, a: 3, juz: 28, arabic: "وَيَرْزُقْهُ مِنْ حَيْثُ لَا يَحْتَسِبُ", hinglish: "Aur use wahan se rizq deta hai jahan se woh soch bhi nahi sakta.", ref: "At-Talaq 65:3" },
+  { s: 94, a: 5, juz: 30, arabic: "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا", hinglish: "Beshak har mushkil ke saath aasani hai.", ref: "Ash-Sharh 94:5" },
+  { s: 20, a: 114, juz: 16, arabic: "وَقُل رَّبِّ زِدْنِي عِلْمًا", hinglish: "Aur kahiye: ae mere Rabb, mera ilm badha de.", ref: "Ta-Ha 20:114" },
+  { s: 13, a: 28, juz: 13, arabic: "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ", hinglish: "Yaad rakho — Allah ke zikr se hi dilon ko sukoon milta hai.", ref: "Ar-Ra'd 13:28" },
+  { s: 62, a: 11, juz: 28, arabic: "وَاللَّهُ خَيْرُ الرَّازِقِينَ", hinglish: "Aur Allah hi sabse behtar rizq dene wala hai.", ref: "Al-Jumu'ah 62:11" },
+  { s: 2, a: 201, juz: 2, arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً", hinglish: "Ae hamare Rabb, humein duniya mein behtari de.", ref: "Al-Baqarah 2:201" },
 ];
 
 function qawVerseOfTheDay() {
@@ -491,50 +689,57 @@ async function renderHome() {
   });
   app.innerHTML = "";
 
-  app.appendChild(
-    el("section", { class: "hero" }, [
-      el("div", { class: "container" }, [
-        el("p", { class: "eyebrow" }, "بِسْمِ اللّهِ الرَّحْمَٰنِ الرَّحِيمِ"),
-        el("h1", {}, cfg.siteTitle),
-        el("p", {}, cfg.tagline),
-      ]),
-    ])
-  );
-
-  const ticker = el("div", { class: "hadith-ticker", "aria-label": "Rotating hadith highlights" });
-  app.appendChild(ticker);
-  startHadithTicker(ticker);
-
   const main = el("main", { class: "container home" });
   app.appendChild(main);
 
   /* Row 1 — continue reading + verse of the day */
-  const progress = qawLatestProgress();
+  const qProgress = getQuranProgress();
   const { streak, week } = qawStreakInfo();
   const verse = qawVerseOfTheDay();
 
   const resumeChildren = [
-    el("span", { class: "home-kicker" }, progress ? "Continue reading" : "Start reading"),
-    el("h2", { class: "home-resume-title" }, progress ? titleFromSlug(progress.file) : "The Holy Qur'an"),
+    el("span", { class: "home-kicker" }, qProgress ? "Continue reading" : "Start reading"),
+    el(
+      "h2",
+      { class: "home-resume-title" },
+      qProgress ? `${SURAH_NAMES[qProgress.s] || "Surah " + qProgress.s}, ayah ${qProgress.a}` : "The Holy Qur'an"
+    ),
     el(
       "p",
       { class: "home-resume-meta" },
-      progress
-        ? `${titleFromSlug(progress.slug)} · page ${progress.page}`
+      qProgress
+        ? `Juz ${qProgress.juz} \u00b7 ${qProgress.percent}% complete \u00b7 last read ${qawRelativeTime(qProgress.updatedAt)}`
         : "Juz by juz — Arabic, transliteration and translation."
     ),
+  ];
+
+  if (qProgress) {
+    resumeChildren.push(
+      el("div", { class: "home-progress-bar" }, [
+        el("div", { class: "home-progress-fill", style: `width:${qProgress.percent}%` }),
+      ])
+    );
+  }
+
+  const playBtn = el("button", { class: "home-btn home-btn-ghost", type: "button" }, "Play recitation");
+  playBtn.addEventListener("click", () => {
+    playBtn.textContent = "Audio coming soon";
+    setTimeout(() => (playBtn.textContent = "Play recitation"), 1800);
+  });
+
+  resumeChildren.push(
     el("div", { class: "home-actions" }, [
       el(
         "a",
         {
           class: "home-btn home-btn-cream",
-          href: progress ? partHref(progress.slug, progress.file, progress.page) : `${BASE_PATH}/quran-text/1`,
+          href: qProgress ? `${BASE_PATH}/quran-text/${qProgress.juz}/v/${qProgress.s}/${qProgress.a}` : `${BASE_PATH}/quran-text/1`,
         },
-        progress ? "Resume reading" : "Read Qur'an"
+        qProgress ? `Resume Juz ${qProgress.juz}` : "Read Qur'an"
       ),
-      el("a", { class: "home-btn home-btn-ghost", href: `${BASE_PATH}/hadith` }, "Browse hadith"),
-    ]),
-  ];
+      playBtn,
+    ])
+  );
 
   if (streak > 1) {
     resumeChildren.push(
@@ -552,13 +757,25 @@ async function renderHome() {
 
   const resume = el("section", { class: "home-panel home-panel-emerald" }, resumeChildren);
 
+  const dailyFavSaved = isAyahFavorited(verse.s, verse.a);
+  const dailyFavBtn = el(
+    "button",
+    { class: `btn btn-ghost home-verse-save${dailyFavSaved ? " is-active" : ""}`, type: "button" },
+    dailyFavSaved ? "Saved" : "Save verse"
+  );
+  dailyFavBtn.addEventListener("click", () => {
+    const now = toggleAyahFavorite(verse.s, verse.a, { juz: verse.juz, ar: verse.arabic, t: "", u: verse.hinglish, surahName: SURAH_NAMES[verse.s] });
+    dailyFavBtn.textContent = now ? "Saved" : "Save verse";
+    dailyFavBtn.classList.toggle("is-active", now);
+  });
+
   const daily = el("section", { class: "home-panel home-panel-verse" }, [
     el("span", { class: "home-kicker home-kicker-dark" }, "Verse of the day"),
     el("p", { class: "home-verse-ar", dir: "rtl" }, verse.arabic),
     el("p", { class: "home-verse-tr" }, verse.hinglish),
     el("div", { class: "home-verse-foot" }, [
       el("span", { class: "home-verse-ref" }, verse.ref),
-      el("a", { class: "home-verse-link", href: `${BASE_PATH}/quran-text/1` }, "Read in context →"),
+      dailyFavBtn,
     ]),
   ]);
 
@@ -586,83 +803,30 @@ async function renderHome() {
   );
   if (typeof qawApplyPrayerLabelsIfCached === "function") qawApplyPrayerLabelsIfCached();
 
-  /* Row 3 — the library (unchanged data source and card markup) */
+  /* Row 3 — Hadith collections in Hinglish */
   main.appendChild(
     el("div", { class: "home-section-head" }, [
-      el("h2", { class: "home-section-title" }, "Library"),
-      el("a", { class: "home-section-link", href: `${BASE_PATH}/hadith` }, "All hadith books"),
+      el("h2", { class: "home-section-title" }, "Hadith collections in Hinglish"),
+      el("a", { class: "home-section-link", href: `${BASE_PATH}/hadith` }, "All books"),
     ])
   );
 
-  const listWrap = el("div");
-  main.appendChild(listWrap);
-  renderLoading(listWrap);
-
-  try {
-    const items = await githubList("");
-    const RESERVED_FOLDERS = ["duas", "search-index", "quran-data", "hadith-data"];
-    const folders = items
-      .filter((i) => i.type === "dir" && !RESERVED_FOLDERS.includes(i.name))
-      .sort(naturalSort);
-    listWrap.innerHTML = "";
-
-    if (folders.length === 0) {
-      listWrap.appendChild(
-        el("p", { class: "state-msg" }, "No PDF books yet — push a folder of PDFs to your repo and refresh.")
-      );
-    }
-
-    const grid = el("div", { class: "grid" });
-    folders.forEach((folder) => {
-      const p = getProgress(folder.name);
-      const body = [
-        el("span", { class: "card-kicker" }, "Book"),
-        el("h2", { class: "card-title" }, titleFromSlug(folder.name)),
-        p
-          ? el("p", { class: "card-desc card-continue" }, `Continue — ${titleFromSlug(p.file)}, page ${p.page}`)
-          : el("p", { class: "card-desc" }, "Tap to view parts"),
-      ];
-      grid.appendChild(
-        el(
-          "a",
-          {
-            class: "card",
-            href: p
-              ? partHref(folder.name, p.file, p.page)
-              : `${BASE_PATH}/book/${encodeURIComponent(folder.name)}`,
-          },
-          [el("div", { class: "card-spine" }), el("div", { class: "card-body" }, body)]
-        )
-      );
-    });
-
-    grid.appendChild(
-      el("a", { class: "card", href: `${BASE_PATH}/duas` }, [
+  const hGrid = el("div", { class: "grid" });
+  HADITH_BOOKS.filter((b) => b.group === "major").forEach((b) => {
+    const statusLabel = b.status === "ready" ? "Hinglish ready" : b.status === "progress" ? "In progress" : "Coming soon";
+    const desc = b.count ? `${b.count.toLocaleString()} hadith \u00b7 ${statusLabel}` : `Hadith \u00b7 ${statusLabel}`;
+    hGrid.appendChild(
+      el("a", { class: "card", href: `${BASE_PATH}/hadith/${b.slug}` }, [
         el("div", { class: "card-spine" }),
         el("div", { class: "card-body" }, [
-          el("span", { class: "card-kicker" }, "Typed text"),
-          el("h2", { class: "card-title" }, "Daily Dua & Dhikr"),
-          el("p", { class: "card-desc" }, "Essential duas for every moment of your day"),
+          el("span", { class: "card-kicker home-hadith-ar", dir: "rtl" }, b.arabic),
+          el("h2", { class: "card-title" }, b.name),
+          el("p", { class: "card-desc" }, desc),
         ]),
       ])
     );
-
-    grid.appendChild(
-      el("a", { class: "card", href: `${BASE_PATH}/hadith` }, [
-        el("div", { class: "card-spine" }),
-        el("div", { class: "card-body" }, [
-          el("span", { class: "card-kicker" }, "Typed text"),
-          el("h2", { class: "card-title" }, "Hadith Collections"),
-          el("p", { class: "card-desc" }, "Sahih al-Bukhari, Sahih Muslim & 9 more — Arabic & English"),
-        ]),
-      ])
-    );
-
-    listWrap.appendChild(grid);
-  } catch (e) {
-    listWrap.innerHTML = "";
-    renderError(listWrap, e.message);
-  }
+  });
+  main.appendChild(hGrid);
 }
 
 
@@ -997,6 +1161,138 @@ async function fetchJuz(juzNumber) {
   return res.json();
 }
 
+/* --- Reading preferences: Arabic size + which lines to show, persisted --- */
+const QAW_QURAN_PREFS_KEY = "qaw:quranPrefs";
+const QAW_QURAN_PREFS_DEFAULT = { arabicSize: 26, translation: true, translit: true, tafsir: false };
+
+function qawGetQuranPrefs() {
+  try {
+    return Object.assign({}, QAW_QURAN_PREFS_DEFAULT, JSON.parse(localStorage.getItem(QAW_QURAN_PREFS_KEY) || "{}"));
+  } catch (e) {
+    return Object.assign({}, QAW_QURAN_PREFS_DEFAULT);
+  }
+}
+
+function qawSaveQuranPrefs(prefs) {
+  try {
+    localStorage.setItem(QAW_QURAN_PREFS_KEY, JSON.stringify(prefs));
+  } catch (e) {
+    /* storage unavailable */
+  }
+}
+
+// Which tab (Juz/Para vs Surah) the side list shows - a page-local UI
+// choice, not persisted, matching how the design behaves.
+let qawQuranListTab = "juz";
+
+function qawQuranSideList(activeJuz, activeSurah) {
+  const tabs = el("div", { class: "qr-tabs" }, [
+    el(
+      "button",
+      { class: `qr-tab${qawQuranListTab === "juz" ? " is-active" : ""}`, type: "button" },
+      "Juz / Para"
+    ),
+    el(
+      "button",
+      { class: `qr-tab${qawQuranListTab === "surah" ? " is-active" : ""}`, type: "button" },
+      "Surah"
+    ),
+  ]);
+
+  const list = el("div", { class: "qr-list" });
+
+  function fillList() {
+    list.innerHTML = "";
+    if (qawQuranListTab === "juz") {
+      for (let j = 1; j <= 30; j++) {
+        list.appendChild(
+          el(
+            "a",
+            { class: `qr-list-item${j === activeJuz ? " is-active" : ""}`, href: `${BASE_PATH}/quran-text/${j}` },
+            [el("span", { class: "qr-list-num" }, String(j)), el("span", { class: "qr-list-label" }, `Juz ${j}`)]
+          )
+        );
+      }
+    } else {
+      for (let s = 1; s <= 114; s++) {
+        const meta = SURAH_META[s];
+        list.appendChild(
+          el(
+            "a",
+            {
+              class: `qr-list-item${s === activeSurah ? " is-active" : ""}`,
+              href: `${BASE_PATH}/quran-text/${meta.juz}/v/${s}/1`,
+            },
+            [
+              el("span", { class: "qr-list-num" }, String(s)),
+              el("span", { class: "qr-list-label" }, SURAH_NAMES[s] || `Surah ${s}`),
+              el("span", { class: "qr-list-ar", dir: "rtl" }, meta.ar),
+            ]
+          )
+        );
+      }
+    }
+  }
+  fillList();
+
+  tabs.querySelectorAll(".qr-tab").forEach((btn, i) => {
+    btn.addEventListener("click", () => {
+      qawQuranListTab = i === 0 ? "juz" : "surah";
+      tabs.querySelectorAll(".qr-tab").forEach((b, j) => b.classList.toggle("is-active", j === i));
+      fillList();
+    });
+  });
+
+  return { tabs, list };
+}
+
+function qawQuranSettingsPanel(prefs, onChange) {
+  const sizeVal = el("span", { class: "qr-size-val" }, String(prefs.arabicSize));
+  const minus = el("button", { class: "qr-size-btn", type: "button", "aria-label": "Decrease Arabic text size" }, "\u2212");
+  const plus = el("button", { class: "qr-size-btn", type: "button", "aria-label": "Increase Arabic text size" }, "+");
+  minus.addEventListener("click", () => {
+    prefs.arabicSize = Math.max(20, prefs.arabicSize - 3);
+    sizeVal.textContent = String(prefs.arabicSize);
+    qawSaveQuranPrefs(prefs);
+    onChange(prefs);
+  });
+  plus.addEventListener("click", () => {
+    prefs.arabicSize = Math.min(48, prefs.arabicSize + 3);
+    sizeVal.textContent = String(prefs.arabicSize);
+    qawSaveQuranPrefs(prefs);
+    onChange(prefs);
+  });
+
+  const toggleRow = (label, key) => {
+    const track = el("span", { class: `qr-switch-track${prefs[key] ? " is-on" : ""}` }, [
+      el("span", { class: "qr-switch-thumb" }),
+    ]);
+    const row = el(
+      "button",
+      { class: "qr-toggle-row", type: "button", role: "switch", "aria-checked": String(!!prefs[key]) },
+      [el("span", { class: "qr-toggle-label" }, label), track]
+    );
+    row.addEventListener("click", () => {
+      prefs[key] = !prefs[key];
+      track.classList.toggle("is-on", prefs[key]);
+      row.setAttribute("aria-checked", String(!!prefs[key]));
+      qawSaveQuranPrefs(prefs);
+      onChange(prefs);
+    });
+    return row;
+  };
+
+  return el("div", { class: "qr-settings" }, [
+    el("span", { class: "qr-settings-kicker" }, "Reading"),
+    el("div", { class: "qr-size-row" }, [el("span", { class: "qr-toggle-label" }, "Arabic size"), minus, sizeVal, plus]),
+    toggleRow("Hinglish translation", "translation"),
+    toggleRow("Transliteration", "translit"),
+    toggleRow("Tafsir notes", "tafsir"),
+  ]);
+}
+
+let qawQuranProgressTimer = null;
+
 async function renderQuranText(juzNumber, scrollTarget) {
   juzNumber = Math.max(1, Math.min(juzNumber, 30));
   setMeta({
@@ -1005,35 +1301,93 @@ async function renderQuranText(juzNumber, scrollTarget) {
   });
   app.innerHTML = "";
 
-  const crumb = el("p", { class: "crumb" }, [
-    el("a", { href: `${BASE_PATH}/` }, "Library"),
-    " / ",
-    el("a", { href: `${BASE_PATH}/book/${encodeURIComponent(QURAN_TEXT_BOOK_SLUG)}` }, "Quran Roman Urdu Hindi"),
-    ` / Juz ${juzNumber} (typed text)`,
-  ]);
+  const prefs = qawGetQuranPrefs();
+  const activeSurah = scrollTarget ? scrollTarget.s : null;
 
-  const topBar = el("div", { class: "text-top-bar" }, [
-    el(
-      "a",
-      { class: "text-nav-link", href: juzNumber > 1 ? `${BASE_PATH}/quran-text/${juzNumber - 1}` : "#", "aria-disabled": juzNumber <= 1 },
-      "\u2039 Juz " + (juzNumber - 1)
-    ),
-    el("span", { class: "text-juz-label" }, `Juz ${juzNumber}`),
-    el(
-      "a",
-      { class: "text-nav-link", href: juzNumber < 30 ? `${BASE_PATH}/quran-text/${juzNumber + 1}` : "#", "aria-disabled": juzNumber >= 30 },
-      "Juz " + (juzNumber + 1) + " \u203a"
-    ),
-  ]);
+  const { tabs, list } = qawQuranSideList(juzNumber, activeSurah);
+  const settings = qawQuranSettingsPanel(prefs, applyPrefsToDom);
+  const side = el("aside", { class: "qr-side" }, [tabs, list, settings]);
 
-  const versesWrap = el("div", { class: "verses-wrap" });
+  const header = el("div", { class: "qr-header" });
+  const versesWrap = el("div", { class: "qr-verses" });
   renderLoading(versesWrap);
+  const reader = el("div", { class: "qr-reader" }, [header, versesWrap]);
 
-  const wrap = el("div", { class: "container text-container" }, [crumb, topBar, versesWrap]);
-  app.appendChild(el("main", {}, wrap));
+  const shell = el("div", { class: "qr-shell" }, [side, reader]);
+  app.appendChild(el("main", { class: "container qr-container" }, [shell]));
+
+  function applyPrefsToDom(p) {
+    versesWrap.style.setProperty("--qr-arabic-size", `${p.arabicSize}px`);
+    versesWrap.querySelectorAll(".verse-translit").forEach((elx) => (elx.style.display = p.translit ? "" : "none"));
+    versesWrap.querySelectorAll(".verse-urdu").forEach((elx) => (elx.style.display = p.translation ? "" : "none"));
+  }
+
+  function verseShareText(v, surahName) {
+    return [v.ar, "", v.t, "", v.u, "", `${surahName} ${v.s}:${v.a} \u00b7 QuranAnyWhere`, `${window.location.origin}${BASE_PATH}/quran-text/${juzNumber}/v/${v.s}/${v.a}`].join(
+      "\n"
+    );
+  }
+
+  function buildVerseActions(v, surahName) {
+    const saved = isAyahFavorited(v.s, v.a);
+    const saveBtn = el(
+      "button",
+      { class: `btn btn-ghost qr-action${saved ? " is-active" : ""}`, type: "button" },
+      saved ? "Saved" : "Save"
+    );
+    saveBtn.addEventListener("click", () => {
+      const now = toggleAyahFavorite(v.s, v.a, { juz: juzNumber, ar: v.ar, t: v.t, u: v.u, surahName });
+      saveBtn.textContent = now ? "Saved" : "Save";
+      saveBtn.classList.toggle("is-active", now);
+    });
+
+    const shareBtn = el("button", { class: "btn btn-ghost qr-action", type: "button" }, "Share verse");
+    shareBtn.addEventListener("click", async () => {
+      const text = verseShareText(v, surahName);
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: `${surahName} ${v.s}:${v.a}`, text });
+        } catch (e) {
+          /* user cancelled the native share sheet - no action needed */
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(text);
+          shareBtn.textContent = "Copied!";
+        } catch (e) {
+          shareBtn.textContent = "Couldn't copy";
+        }
+        setTimeout(() => (shareBtn.textContent = "Share verse"), 1800);
+      }
+    });
+
+    const playBtn = el("button", { class: "btn btn-ghost qr-action", type: "button" }, "Play");
+    playBtn.addEventListener("click", () => {
+      playBtn.textContent = "Audio coming soon";
+      setTimeout(() => (playBtn.textContent = "Play"), 1800);
+    });
+
+    return el("div", { class: "qr-verse-actions" }, [saveBtn, shareBtn, playBtn]);
+  }
 
   try {
     const verses = await fetchJuz(juzNumber);
+    const firstSurah = verses.length ? verses[0].s : null;
+    const meta = firstSurah ? SURAH_META[firstSurah] : null;
+
+    header.innerHTML = "";
+    header.appendChild(
+      el("div", {}, [
+        el("span", { class: "qr-header-kicker" }, `JUZ ${juzNumber} \u00b7 SURAH ${firstSurah || "\u2014"}`),
+        el("h1", { class: "qr-header-title" }, (firstSurah && SURAH_NAMES[firstSurah]) || `Juz ${juzNumber}`),
+        el(
+          "p",
+          { class: "qr-header-sub" },
+          meta ? `${meta.ayahs} ayat \u00b7 ${meta.type === "Meccan" ? "Makki" : "Madani"}` : ""
+        ),
+      ])
+    );
+    if (meta) header.appendChild(el("span", { class: "qr-header-ar", dir: "rtl" }, meta.ar));
 
     versesWrap.innerHTML = "";
     let currentChapter = null;
@@ -1048,6 +1402,7 @@ async function renderQuranText(juzNumber, scrollTarget) {
           ])
         );
       }
+      const surahName = SURAH_NAMES[v.s] || `Surah ${v.s}`;
       const card = el("div", { class: "verse-card", id: `v-${v.s}-${v.a}` }, [
         el("div", { class: "verse-arabic" }, [
           el("span", {}, v.ar),
@@ -1055,6 +1410,7 @@ async function renderQuranText(juzNumber, scrollTarget) {
         ]),
         el("p", { class: "verse-translit" }, v.t),
         el("p", { class: "verse-urdu" }, v.u),
+        buildVerseActions(v, surahName),
       ]);
       versesWrap.appendChild(card);
     });
@@ -1063,6 +1419,31 @@ async function renderQuranText(juzNumber, scrollTarget) {
       "Arabic text \u00b7 transliteration: tanzil.net. Urdu translation: Abul Ala Maududi, via quranromanurdu.com."
     );
     versesWrap.appendChild(note);
+
+    applyPrefsToDom(prefs);
+
+    // Track roughly how far into this juz the visitor has scrolled, so the
+    // home "Continue reading" panel can resume near the right ayah. Fires
+    // for whichever verse card is nearest the vertical center of the
+    // viewport, debounced so normal scrolling doesn't spam localStorage.
+    const cards = Array.from(versesWrap.querySelectorAll(".verse-card"));
+    if (cards.length && "IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const idx = cards.indexOf(entry.target);
+            if (idx < 0) return;
+            const [, s, a] = entry.target.id.split("-").map(Number);
+            const percent = Math.round(((idx + 1) / cards.length) * 100);
+            clearTimeout(qawQuranProgressTimer);
+            qawQuranProgressTimer = setTimeout(() => setQuranProgress(juzNumber, s, a, percent), 600);
+          });
+        },
+        { rootMargin: "-35% 0px -55% 0px", threshold: 0 }
+      );
+      cards.forEach((c) => observer.observe(c));
+    }
 
     if (scrollTarget) {
       const target = document.getElementById(`v-${scrollTarget.s}-${scrollTarget.a}`);
@@ -1669,8 +2050,8 @@ async function renderHadithList(bookSlug, sectionNum, scrollTarget) {
 // always current rather than a stale snapshot.
 async function renderFavorites() {
   setMeta({
-    full: `Your Favorite Hadith | ${cfg.siteTitle}`,
-    description: "Hadith you've favorited on QuranAnyWhere, saved right in this browser.",
+    full: `Your Favorites | ${cfg.siteTitle}`,
+    description: "Hadith and Qur'an verses you've favorited on QuranAnyWhere, saved right in this browser.",
   });
   app.innerHTML = "";
   const crumb = el("p", { class: "crumb" }, [el("a", { href: `${BASE_PATH}/` }, "Library"), " / \u2661 Favorites"]);
@@ -1687,11 +2068,7 @@ async function renderFavorites() {
     listWrap.appendChild(
       el("div", { class: "empty-favorites" }, [
         el("p", { class: "state-msg" }, "No favorites yet."),
-        el("p", { class: "state-msg" }, [
-          "Tap the ",
-          el("span", { class: "empty-favorites-heart" }, "\u2661"),
-          " on any hadith to save it here.",
-        ]),
+        el("p", { class: "state-msg" }, "Tap Save on any hadith or ayah to keep it here."),
         el("a", { class: "btn btn-primary", href: `${BASE_PATH}/hadith` }, "Browse Hadith Collections"),
       ])
     );
@@ -1700,15 +2077,73 @@ async function renderFavorites() {
 
   renderLoading(listWrap);
 
+  function buildAyahFavoriteCard(f, v) {
+    const surahName = f.surahName || SURAH_NAMES[f.s] || `Surah ${f.s}`;
+    const saveBtn = el("button", { class: "btn btn-ghost qr-action is-active", type: "button" }, "Saved");
+    saveBtn.addEventListener("click", () => {
+      toggleAyahFavorite(f.s, f.a, {});
+      card.remove();
+      if (listWrap.children.length === 0) renderFavorites();
+    });
+    const shareBtn = el("button", { class: "btn btn-ghost qr-action", type: "button" }, "Share verse");
+    shareBtn.addEventListener("click", async () => {
+      const text = [v.ar, v.t, v.u, `${surahName} ${f.s}:${f.a}`].filter(Boolean).join("\n");
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: `${surahName} ${f.s}:${f.a}`, text });
+        } catch (e) {
+          /* cancelled */
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(text);
+          shareBtn.textContent = "Copied!";
+        } catch (e) {
+          shareBtn.textContent = "Couldn't copy";
+        }
+        setTimeout(() => (shareBtn.textContent = "Share verse"), 1800);
+      }
+    });
+    const openLink = el(
+      "a",
+      { class: "btn btn-ghost qr-action", href: `${BASE_PATH}/quran-text/${f.juz || 1}/v/${f.s}/${f.a}` },
+      "Read in context"
+    );
+
+    const card = el("div", { class: "verse-card" }, [
+      el("div", { class: "verse-arabic" }, [el("span", {}, v.ar), el("span", { class: "verse-num-badge" }, String(f.a))]),
+      v.t ? el("p", { class: "verse-translit" }, v.t) : null,
+      v.u ? el("p", { class: "verse-urdu" }, v.u) : null,
+      el("p", { class: "dua-reference" }, `${surahName} ${f.s}:${f.a}`),
+      el("div", { class: "qr-verse-actions" }, [saveBtn, shareBtn, openLink]),
+    ].filter(Boolean));
+    return card;
+  }
+
   try {
-    const uniqueSlugs = [...new Set(favorites.map((f) => f.bookSlug))];
-    const loaded = {};
+    const hadithFavs = favorites.filter((f) => f.kind !== "ayah");
+    const ayahFavs = favorites.filter((f) => f.kind === "ayah");
+
+    const uniqueSlugs = [...new Set(hadithFavs.map((f) => f.bookSlug))];
+    const loadedBooks = {};
     await Promise.all(
       uniqueSlugs.map(async (slug) => {
         try {
-          loaded[slug] = await loadHadithBook(slug);
+          loadedBooks[slug] = await loadHadithBook(slug);
         } catch (e) {
-          loaded[slug] = null; // that collection's data failed to load - skip its favorites below
+          loadedBooks[slug] = null; // that collection's data failed to load - skip its favorites below
+        }
+      })
+    );
+
+    const uniqueJuz = [...new Set(ayahFavs.map((f) => f.juz).filter(Boolean))];
+    const loadedJuz = {};
+    await Promise.all(
+      uniqueJuz.map(async (j) => {
+        try {
+          loadedJuz[j] = await fetchJuz(j);
+        } catch (e) {
+          loadedJuz[j] = null;
         }
       })
     );
@@ -1717,7 +2152,19 @@ async function renderFavorites() {
     let shown = 0;
 
     favorites.forEach((f) => {
-      const bookData = loaded[f.bookSlug];
+      if (f.kind === "ayah") {
+        const juzData = f.juz ? loadedJuz[f.juz] : null;
+        const rec = juzData ? juzData.find((x) => x.s === f.s && x.a === f.a) : null;
+        // Fall back to the text captured at save time if the juz fetch failed
+        // or the ayah's juz wasn't recorded (e.g. an older saved entry).
+        const v = rec || (f.ar ? { ar: f.ar, t: f.t, u: f.u } : null);
+        if (!v) return;
+        listWrap.appendChild(buildAyahFavoriteCard(f, v));
+        shown++;
+        return;
+      }
+
+      const bookData = loadedBooks[f.bookSlug];
       const h = bookData && bookData.hadithsByBook[f.sectionNum]
         ? bookData.hadithsByBook[f.sectionNum].find((x) => x.hadithnumber === f.hadithnumber)
         : null;
