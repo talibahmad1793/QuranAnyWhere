@@ -2063,3 +2063,77 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   .pl-row { flex-direction: column; align-items: flex-start; }
   .pl-row-ar { text-align: right; width: 100%; }
 }
+
+/* =============================================================================
+   QuranAW — custom install-app banner (v1). Fixed to the viewport so it's
+   visible regardless of sidebar/drawer state, on both mobile and desktop.
+   Namespaced .qaw-install-*.
+   ========================================================================== */
+.qaw-install-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--emerald-deep);
+  color: #f1ead7;
+  box-shadow: var(--shadow-lg);
+}
+.qaw-install-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(241, 234, 215, 0.14);
+  color: var(--gold-soft);
+}
+.qaw-install-text {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.qaw-install-btn {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--emerald-deep);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  transition: background var(--fast);
+}
+.qaw-install-btn:hover { background: var(--gold-soft); }
+.qaw-install-close {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(241, 234, 215, 0.55);
+  font-size: 18px;
+  line-height: 1;
+}
+.qaw-install-close:hover { color: #f1ead7; }
+
+@media (max-width: 480px) {
+  .qaw-install-banner { left: 10px; right: 10px; bottom: 10px; padding: 11px 12px; }
+  .qaw-install-text { font-size: 12.5px; }
+}

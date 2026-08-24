@@ -78,7 +78,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/QuranAnyWhere/style.css?v=18" />
+    <link rel="stylesheet" href="/QuranAnyWhere/style.css?v=19" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
       pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -112,6 +112,11 @@
             <span class="qaw-nav-dot" aria-hidden="true"></span>
             <span class="qaw-nav-label">Qur'an</span>
             <span class="qaw-nav-meta">30 juz</span>
+          </a>
+          <a class="qaw-nav-item" data-nav="listen" href="/QuranAnyWhere/quran-play/1">
+            <span class="qaw-nav-dot" aria-hidden="true"></span>
+            <span class="qaw-nav-label">Listen</span>
+            <span class="qaw-nav-meta">Full audio</span>
           </a>
           <a class="qaw-nav-item" data-nav="hadith" href="/QuranAnyWhere/hadith">
             <span class="qaw-nav-dot" aria-hidden="true"></span>
@@ -279,8 +284,17 @@
       </div><!-- /.qaw-main -->
     </div><!-- /.qaw-shell -->
 
+    <div class="qaw-install-banner" id="qawInstallBanner" style="display:none;" role="status">
+      <span class="qaw-install-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 3v10m0 0 4-4m-4 4-4-4M4 15v1.5A1.5 1.5 0 0 0 5.5 18h9a1.5 1.5 0 0 0 1.5-1.5V15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="qaw-install-text" id="qawInstallText">Install QuranAW for quick, offline-ready access</span>
+      <button type="button" class="qaw-install-btn" id="qawInstallBtn">Install</button>
+      <button type="button" class="qaw-install-close" id="qawInstallClose" aria-label="Dismiss">&times;</button>
+    </div>
+
     <script src="/QuranAnyWhere/config.js?v=12"></script>
-    <script src="/QuranAnyWhere/app.js?v=19"></script>
+    <script src="/QuranAnyWhere/app.js?v=21"></script>
     <script>
       document.querySelectorAll("[data-year]").forEach((el) => {
         el.textContent = new Date().getFullYear();

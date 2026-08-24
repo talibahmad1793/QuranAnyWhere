@@ -319,10 +319,6 @@ const SURAH_META = [
    Rashid Alafasy (ar.alafasy), a widely-used default edition on that CDN.
    Only one clip plays at a time. Clicking the active button again pauses
    in place (resume continues from the same position, not the start).
-   After the Arabic recitation finishes, the Hinglish translation is read
-   aloud too (via the browser's built-in Web Speech API) so a listener
-   gets the meaning, not just the sound - voice quality/availability for
-   Hindi/Urdu depends on the browser and OS.
    ========================================================================== */
 const QAW_RECITER_EDITION = "ar.alafasy";
 const QAW_RECITER_BITRATE = 128;
@@ -346,36 +342,11 @@ function qawSurahAudioUrl(s) {
   return `https://cdn.islamic.network/quran/audio-surah/${QAW_RECITER_BITRATE}/${QAW_RECITER_EDITION}/${s}.mp3`;
 }
 
-// Speaks `text` aloud via the Web Speech API, resolving when it finishes
-// (or immediately if speech synthesis isn't available - never rejects, so
-// callers can always safely await it).
-function qawSpeakText(text) {
-  return new Promise((resolve) => {
-    if (!text || !("speechSynthesis" in window)) {
-      resolve();
-      return;
-    }
-    try {
-      const utter = new SpeechSynthesisUtterance(text);
-      const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find((v) => /^hi/i.test(v.lang)) || voices.find((v) => /^ur/i.test(v.lang));
-      if (preferred) utter.voice = preferred;
-      utter.rate = 0.95;
-      utter.onend = resolve;
-      utter.onerror = resolve;
-      window.speechSynthesis.speak(utter);
-    } catch (e) {
-      resolve();
-    }
-  });
-}
-
 function qawStopAudio() {
   if (qawAudioEl) {
     qawAudioEl.onended = null;
     qawAudioEl.pause();
   }
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   if (qawAudioActiveBtn) {
     qawAudioActiveBtn.textContent = qawAudioActiveBtn.dataset.playLabel || "Play";
   }
@@ -388,11 +359,9 @@ function qawStopAudio() {
 //   pause/resume in place (position is preserved).
 // - Clicking a different Play button (or a new track) stops whatever was
 //   playing first and starts the new one from the beginning.
-// - `narrationText`, if given, is spoken aloud (Hinglish translation) once
-//   the Arabic recitation ends, before the button reverts to `label`.
-// - `onFinished`, if given, fires after recitation + narration both finish
-//   naturally (not on manual pause/stop) - used to auto-advance a playlist.
-function qawPlayAudioUrl(url, btn, label, narrationText, onFinished) {
+// - `onFinished`, if given, fires after the recitation ends naturally (not
+//   on manual pause/stop) - used to auto-advance a playlist.
+function qawPlayAudioUrl(url, btn, label, onFinished) {
   const isSameTrack = qawAudioActiveBtn === btn && qawAudioActiveUrl === url && qawAudioEl;
   if (isSameTrack) {
     if (qawAudioEl.paused) {
@@ -430,13 +399,8 @@ function qawPlayAudioUrl(url, btn, label, narrationText, onFinished) {
     }
   );
 
-  qawAudioEl.onended = async () => {
+  qawAudioEl.onended = () => {
     if (qawAudioActiveBtn !== btn) return; // superseded by another track already
-    if (narrationText) {
-      btn.textContent = "Reading meaning\u2026";
-      await qawSpeakText(narrationText);
-    }
-    if (qawAudioActiveBtn !== btn) return; // stopped/switched while narrating
     btn.textContent = label;
     qawAudioActiveBtn = null;
     qawAudioActiveUrl = null;
@@ -1582,7 +1546,7 @@ async function renderQuranText(juzNumber, scrollTarget) {
 
     const playBtn = el("button", { class: "btn btn-ghost qr-action", type: "button" }, "Play");
     playBtn.addEventListener("click", () => {
-      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playBtn, "Play", v.u);
+      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playBtn, "Play");
     });
 
     return el("div", { class: "qr-verse-actions" }, [saveBtn, shareBtn, playBtn]);
@@ -2722,6 +2686,7 @@ function qawNavKeyFromParts(parts) {
   if (!p0) return "home";
   if (p0 === "quran-text") return "quran";
   if (p0 === "book" && parts[1] === QURAN_TEXT_BOOK_SLUG) return "quran";
+  if (p0 === "quran-play") return "listen";
   if (p0 === "hadith" || p0 === "hadith-about") return "hadith";
   if (p0 === "search") return "search";
   if (p0 === "duas") return "duas";
@@ -3217,7 +3182,7 @@ async function renderQuranPlayer(surahNumber, opts) {
       }
       setPlayingRow(idx);
       const v = ayahs[idx];
-      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playAllBtn, "\u25b6 Play Surah", v.u, () => playFrom(idx + 1));
+      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playAllBtn, "\u25b6 Play Surah", () => playFrom(idx + 1));
     }
 
     playAllBtn.addEventListener("click", () => {
@@ -3236,10 +3201,109 @@ async function renderQuranPlayer(surahNumber, opts) {
 }
 
 
+/* =============================================================================
+   QuranAW — custom "Install app" banner (v1). Browsers that support the PWA
+   install prompt (Chrome/Edge/Samsung Internet on Android, desktop Chrome)
+   fire `beforeinstallprompt`; we suppress the browser's own popup and show
+   our own banner instead, triggering the same native prompt on click. iOS
+   Safari never fires that event and has no programmatic install API, so it
+   gets a one-time manual "Add to Home Screen" instruction instead.
+   ========================================================================== */
+const QAW_INSTALL_DISMISS_KEY = "qaw:installDismissed";
+let qawDeferredInstallPrompt = null;
+
+function qawIsStandalone() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true // iOS Safari's own flag
+  );
+}
+
+function qawIsIos() {
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+}
+
+function qawWasInstallDismissed() {
+  try {
+    return localStorage.getItem(QAW_INSTALL_DISMISS_KEY) === "1";
+  } catch (e) {
+    return false;
+  }
+}
+
+function qawShowInstallBanner(text) {
+  const banner = document.getElementById("qawInstallBanner");
+  const textEl = document.getElementById("qawInstallText");
+  if (!banner) return;
+  if (text && textEl) textEl.textContent = text;
+  banner.style.display = "flex";
+}
+
+function qawHideInstallBanner() {
+  const banner = document.getElementById("qawInstallBanner");
+  if (banner) banner.style.display = "none";
+}
+
+function qawInitInstallPrompt() {
+  if (qawIsStandalone() || qawWasInstallDismissed()) return; // already installed, or user dismissed before
+
+  const installBtn = document.getElementById("qawInstallBtn");
+  const closeBtn = document.getElementById("qawInstallClose");
+  if (!installBtn || !closeBtn) return;
+
+  closeBtn.addEventListener("click", () => {
+    qawHideInstallBanner();
+    try {
+      localStorage.setItem(QAW_INSTALL_DISMISS_KEY, "1");
+    } catch (e) {
+      /* storage unavailable */
+    }
+  });
+
+  // Android/desktop Chrome-family browsers: suppress their native popup and
+  // show ours instead; clicking Install re-triggers the same real prompt.
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    qawDeferredInstallPrompt = e;
+    installBtn.textContent = "Install";
+    qawShowInstallBanner("Install QuranAW for quick, offline-ready access");
+  });
+
+  installBtn.addEventListener("click", async () => {
+    if (qawDeferredInstallPrompt) {
+      qawDeferredInstallPrompt.prompt();
+      try {
+        await qawDeferredInstallPrompt.userChoice;
+      } catch (e) {
+        /* dismissed */
+      }
+      qawDeferredInstallPrompt = null;
+      qawHideInstallBanner();
+      return;
+    }
+    if (qawIsIos()) {
+      qawShowInstallBanner('Tap the Share icon, then "Add to Home Screen"');
+    }
+  });
+
+  window.addEventListener("appinstalled", () => {
+    qawDeferredInstallPrompt = null;
+    qawHideInstallBanner();
+  });
+
+  // iOS Safari never fires beforeinstallprompt - offer manual instructions
+  // instead, once, unless already dismissed or already installed.
+  if (qawIsIos() && !qawIsStandalone()) {
+    qawShowInstallBanner("Add QuranAW to your Home Screen for quick access");
+    installBtn.textContent = "How?";
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   qawInitThemeToggle();
   qawInitTopSearch();
   qawInitSidebarToggle();
   qawRefreshSidebarChrome();
   qawInitPrayerTimes();
+  qawInitInstallPrompt();
 });
