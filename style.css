@@ -1,12 +1,22 @@
 :root {
   --ink: #22261f;
+  --ink-rgb: 34, 38, 31;
   --paper: #ede6d3;
   --paper-raised: #f5efe0;
   --emerald: #1b4b43;
   --emerald-deep: #123430;
   --gold: #b8862e;
   --gold-soft: #d9b978;
-  --line: rgba(34, 38, 31, 0.12);
+  --line: rgba(var(--ink-rgb), 0.12);
+
+  /* Theme-aware text tokens: default to the emerald palette (unchanged look
+     in Paper/Sepia), but redefined to light colors under [data-theme="night"]
+     below so headings/links stay readable instead of dark-on-dark. Anything
+     that's a fixed-color surface (sidebar, solid-emerald buttons, gold
+     chips) intentionally keeps using --emerald/--emerald-deep directly and
+     is untouched by this. */
+  --text-strong: var(--emerald-deep);
+  --text-accent: var(--emerald);
 
   --radius-sm: 8px;
   --radius: 14px;
@@ -66,7 +76,7 @@ header.site-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   font-weight: 600;
   font-size: 14px;
   padding: 8px 14px;
@@ -101,7 +111,7 @@ header.site-header {
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 700;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
 }
 
 .hero {
@@ -216,12 +226,12 @@ main { padding: 48px 24px 96px; }
 .card-kicker {
   display: inline-block;
   font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
-  text-transform: uppercase; color: var(--emerald-deep);
+  text-transform: uppercase; color: var(--text-strong);
   background: rgba(184, 134, 46, 0.16);
   padding: 4px 10px;
   border-radius: 999px;
 }
-.card-title { font-family: var(--font-display); font-size: 27px; margin: 12px 0 8px; color: var(--emerald-deep); }
+.card-title { font-family: var(--font-display); font-size: 27px; margin: 12px 0 8px; color: var(--text-strong); }
 .card-desc { font-size: 14px; line-height: 1.5; opacity: 0.75; margin: 0; }
 
 .tile {
@@ -239,11 +249,11 @@ main { padding: 48px 24px 96px; }
   box-shadow: var(--shadow-lg);
   border-color: rgba(184, 134, 46, 0.4);
 }
-.tile-num { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--emerald-deep); }
+.tile-num { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--text-strong); }
 .tile-label { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.6; }
 
 .crumb { font-size: 13px; opacity: 0.65; margin-bottom: 8px; }
-h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--emerald-deep); margin: 0 0 8px; }
+h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--text-strong); margin: 0 0 8px; }
 
 .viewer-wrap {
   background: var(--emerald-deep);
@@ -306,7 +316,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   font-weight: 600;
 }
 .continue-banner-detail { font-size: 13px; opacity: 0.8; font-weight: 500; }
-.card-continue { color: var(--emerald); font-weight: 700; opacity: 1; }
+.card-continue { color: var(--text-accent); font-weight: 700; opacity: 1; }
 
 .text-mode-banner {
   display: flex;
@@ -314,7 +324,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   gap: 2px;
   background: var(--paper-raised);
   border: 1px solid var(--gold);
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   border-radius: 8px;
   padding: 12px 16px;
   margin: 8px 0 8px;
@@ -376,7 +386,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   line-height: 2;
   direction: rtl;
   text-align: right;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   display: block;
 }
 .verse-num-badge {
@@ -397,7 +407,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   font-family: var(--font-accent);
   font-style: italic;
   font-size: 15px;
-  color: var(--emerald);
+  color: var(--text-accent);
   margin: 12px 0 6px;
 }
 .hadith-hinglish {
@@ -440,7 +450,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 .dua-title {
   font-family: var(--font-display);
   font-size: 20px;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   margin: 0 0 14px;
 }
 .dua-arabic { margin-bottom: 4px; }
@@ -465,7 +475,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   background: none;
   border: none;
   padding: 0;
-  color: var(--emerald);
+  color: var(--text-accent);
   font-weight: 700;
   font-size: 13px;
   font-family: inherit;
@@ -530,7 +540,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   border-radius: 999px;
   background: var(--paper);
   border: 1px solid var(--line);
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   transition: border-color var(--fast), background var(--fast), transform var(--fast);
 }
 .social-link:hover { border-color: var(--gold); background: var(--paper-raised); transform: translateY(-1px); }
@@ -583,7 +593,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 .modal-title {
   font-family: var(--font-display);
   font-size: 22px;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   margin: 0;
 }
 .modal-close {
@@ -597,7 +607,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   border-radius: 999px;
   transition: opacity var(--fast), background var(--fast);
 }
-.modal-close:hover { opacity: 1; background: rgba(34, 38, 31, 0.06); }
+.modal-close:hover { opacity: 1; background: rgba(var(--ink-rgb), 0.06); }
 .modal-context {
   font-size: 13px;
   font-weight: 700;
@@ -610,7 +620,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   margin-bottom: 6px;
 }
 .modal-textarea {
@@ -639,7 +649,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   font-size: 13px;
 }
 .modal-email-label { opacity: 0.65; }
-.modal-email { font-weight: 700; color: var(--emerald-deep); }
+.modal-email { font-weight: 700; color: var(--text-strong); }
 .modal-email-row .btn-ghost { margin-left: auto; }
 .modal-actions { display: flex; justify-content: flex-end; }
 .btn {
@@ -659,7 +669,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 .btn-ghost {
   background: none;
   border: 1px solid var(--line);
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   padding: 6px 12px;
   font-size: 12.5px;
   border-radius: 999px;
@@ -709,7 +719,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 .search-section-title {
   font-family: var(--font-display);
   font-size: 22px;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   margin: 24px 0 12px;
 }
 .search-result {
@@ -1008,7 +1018,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 .hadith-group-title-ar {
   font-family: var(--font-display);
   font-size: 19px;
-  color: var(--emerald);
+  color: var(--text-accent);
   white-space: nowrap;
 }
 .hadith-group-grid {
@@ -1061,7 +1071,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 .hadith-row-en {
   font-weight: 600;
   font-size: 14.5px;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
 }
 .hadith-row-ar {
   font-family: var(--font-display);
@@ -1163,7 +1173,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   font-weight: 600;
   transition: background var(--fast), color var(--fast), border-color var(--fast);
 }
-.home-btn-cream { background: var(--paper-raised); color: var(--emerald-deep); }
+.home-btn-cream { background: #f1ead7; color: #123430; }
 .home-btn-cream:hover { background: var(--gold); color: #fffdf5; }
 .home-btn-ghost { border: 1px solid rgba(241, 234, 215, 0.32); color: #f1ead7; }
 .home-btn-ghost:hover { border-color: var(--gold); color: var(--gold-soft); }
@@ -1203,7 +1213,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   font-size: 18px;
   line-height: 1.55;
   margin: 14px 0 0;
-  color: rgba(34, 38, 31, 0.85);
+  color: rgba(var(--ink-rgb), 0.85);
 }
 .home-verse-foot {
   margin-top: auto;
@@ -1213,8 +1223,8 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   justify-content: space-between;
   gap: 12px;
 }
-.home-verse-ref { font-size: 13px; color: rgba(34, 38, 31, 0.55); }
-.home-verse-link { font-size: 13px; font-weight: 600; color: var(--emerald); border-bottom: 1px solid var(--gold); }
+.home-verse-ref { font-size: 13px; color: rgba(var(--ink-rgb), 0.55); }
+.home-verse-link { font-size: 13px; font-weight: 600; color: var(--text-accent); border-bottom: 1px solid var(--gold); }
 .home-verse-link:hover { color: var(--gold); }
 
 .home-tiles {
@@ -1239,8 +1249,8 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
 .home-tile.is-gold .home-tile-mark { background: var(--gold); }
 .home-tile.is-sage .home-tile-mark { background: #5c7f6f; }
 .home-tile.is-clay .home-tile-mark { background: #8b6f4e; }
-.home-tile-label { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--emerald-deep); }
-.home-tile-sub { font-family: var(--font-body); font-size: 13px; line-height: 1.45; color: rgba(34, 38, 31, 0.6); }
+.home-tile-label { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--text-strong); }
+.home-tile-sub { font-family: var(--font-body); font-size: 13px; line-height: 1.45; color: rgba(var(--ink-rgb), 0.6); }
 
 .home-section-head {
   display: flex;
@@ -1249,8 +1259,8 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   gap: 16px;
   margin: 0 0 16px;
 }
-.home-section-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0; color: var(--emerald-deep); }
-.home-section-link { font-size: 13px; font-weight: 600; color: var(--emerald); border-bottom: 1px solid var(--gold); }
+.home-section-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0; color: var(--text-strong); }
+.home-section-link { font-size: 13px; font-weight: 600; color: var(--text-accent); border-bottom: 1px solid var(--gold); }
 .home-section-link:hover { color: var(--gold); }
 
 @media (max-width: 900px) {
@@ -1469,7 +1479,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   border-radius: 10px;
   background: var(--paper-raised);
   border: 1px solid var(--line);
-  color: rgba(34, 38, 31, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
 }
 .qaw-topbar-search input {
   all: unset;
@@ -1478,14 +1488,14 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   font-size: 13.5px;
   color: var(--ink);
 }
-.qaw-topbar-search input::placeholder { color: rgba(34, 38, 31, 0.45); }
+.qaw-topbar-search input::placeholder { color: rgba(var(--ink-rgb), 0.45); }
 
 .qaw-theme-toggle {
   display: flex;
   gap: 3px;
   padding: 3px;
   border-radius: 9px;
-  background: rgba(34, 38, 31, 0.08);
+  background: rgba(var(--ink-rgb), 0.08);
   flex: none;
 }
 .qaw-theme-btn {
@@ -1495,7 +1505,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   border-radius: 7px;
   font-family: var(--font-body);
   font-size: 12px;
-  color: rgba(34, 38, 31, 0.6);
+  color: rgba(var(--ink-rgb), 0.6);
   transition: background var(--fast), color var(--fast);
 }
 .qaw-theme-btn:hover { color: var(--ink); }
@@ -1511,7 +1521,7 @@ h1.page-title { font-family: var(--font-display); font-size: 42px; color: var(--
   border: 1px solid var(--line);
   font-family: var(--font-body);
   font-size: 12px;
-  color: rgba(34, 38, 31, 0.7);
+  color: rgba(var(--ink-rgb), 0.7);
   flex: none;
   white-space: nowrap;
 }
@@ -1532,15 +1542,23 @@ html[data-theme="sepia"] {
   --paper: #e9dcc0;
   --paper-raised: #f2e9d3;
   --ink: #2b2013;
+  --ink-rgb: 43, 32, 19;
   --line: rgba(43, 32, 19, 0.14);
 }
 html[data-theme="night"] {
   --paper: #171c1a;
   --paper-raised: #1f2622;
   --ink: #e7e6df;
+  --ink-rgb: 231, 230, 223;
   --line: rgba(231, 230, 223, 0.12);
   --emerald: #2f7768;
   --emerald-deep: #16332d;
+  /* Headings/links must NOT inherit --emerald-deep/--emerald here - those
+     stay dark on purpose (still used as backgrounds: sidebar, solid-emerald
+     buttons, .home-panel-emerald, .qr-tab.is-active, etc.) which would make
+     text using them unreadable against the also-dark night background. */
+  --text-strong: #eef1ea;
+  --text-accent: var(--gold-soft);
 }
 html[data-theme="night"] .qaw-topbar { background: rgba(23, 28, 26, 0.92); }
 html[data-theme="night"] .hero::after { background: var(--paper); }
@@ -1604,7 +1622,7 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   gap: 3px;
   padding: 3px;
   border-radius: 10px;
-  background: rgba(34, 38, 31, 0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   flex: none;
 }
 .qr-tab {
@@ -1617,7 +1635,7 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
-  color: rgba(34, 38, 31, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
   transition: background var(--fast), color var(--fast);
 }
 .qr-tab.is-active { background: var(--emerald); color: #f1ead7; }
@@ -1671,7 +1689,7 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(34, 38, 31, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   font-weight: 700;
 }
 .qr-size-row {
@@ -1691,7 +1709,7 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   border: 1px solid var(--line);
   border-radius: 7px;
   font-size: 15px;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
 }
 .qr-size-btn:hover { border-color: var(--gold); }
 .qr-size-val { font-family: var(--font-body); font-size: 13px; font-weight: 600; width: 22px; text-align: center; }
@@ -1711,7 +1729,7 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   height: 20px;
   flex: none;
   border-radius: 999px;
-  background: rgba(34, 38, 31, 0.18);
+  background: rgba(var(--ink-rgb), 0.18);
   transition: background var(--fast);
 }
 .qr-switch-track.is-on { background: var(--emerald); }
@@ -1748,16 +1766,16 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(34, 38, 31, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
 }
 .qr-header-title {
   font-family: var(--font-display);
   font-size: 28px;
   font-weight: 700;
-  color: var(--emerald-deep);
+  color: var(--text-strong);
   margin: 6px 0 4px;
 }
-.qr-header-sub { font-family: var(--font-body); font-size: 13.5px; color: rgba(34, 38, 31, 0.6); margin: 0; }
+.qr-header-sub { font-family: var(--font-body); font-size: 13.5px; color: rgba(var(--ink-rgb), 0.6); margin: 0; }
 .qr-header-ar { font-family: var(--font-display); font-size: 30px; color: var(--gold); flex: none; }
 
 .qr-verses { display: flex; flex-direction: column; }
@@ -1799,8 +1817,8 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
 .home-progress-fill { height: 100%; background: var(--gold); }
 
 .home-verse-save {
-  border-color: rgba(34, 38, 31, 0.18);
-  color: var(--emerald-deep);
+  border-color: rgba(var(--ink-rgb), 0.18);
+  color: var(--text-strong);
 }
 .home-verse-save.is-active { background: var(--emerald); color: #f1ead7; border-color: var(--emerald); }
 
@@ -1813,4 +1831,137 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   text-transform: none;
   letter-spacing: 0;
   display: block;
+}
+
+/* =============================================================================
+   QuranAW — Dua & Azkar grid (v2): 2-column card grid with a timing tag,
+   compact share icon, and Save + Tasbeeh action buttons. Reuses the existing
+   .dua-card / .dua-title / .dua-arabic / .dua-translation / .dua-reference
+   rules above (also shared with hadith cards) - only new pieces are added
+   here, namespaced so nothing above is redefined.
+   ========================================================================== */
+
+.duas-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-top: 28px;
+}
+.duas-grid > .dua-card { margin-bottom: 0; }
+
+.dua-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.dua-card-head .dua-title { margin: 0; flex: 1; }
+.dua-timing {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(var(--ink-rgb), 0.5);
+  white-space: nowrap;
+  padding-top: 3px;
+}
+.dua-share-icon {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  color: rgba(var(--ink-rgb), 0.45);
+  transition: background var(--fast), color var(--fast);
+}
+.dua-share-icon:hover { background: rgba(184, 134, 46, 0.14); color: var(--text-strong); }
+
+.dua-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.dua-action { padding: 7px 14px; font-size: 12.5px; }
+.dua-action.is-active { background: var(--emerald); color: #f1ead7; border-color: var(--emerald); }
+
+@media (max-width: 760px) {
+  .duas-grid { grid-template-columns: 1fr; }
+}
+
+/* =============================================================================
+   QuranAW — Prayer Times page (v1). Full namaz timing list + Qibla direction
+   for the visitor's resolved location. Namespaced .pt-*.
+   ========================================================================== */
+.pt-location {
+  font-family: var(--font-accent);
+  font-style: italic;
+  color: rgba(var(--ink-rgb), 0.65);
+  margin: -6px 0 20px;
+}
+
+.pt-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+}
+
+.pt-next {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.pt-next-kicker {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(var(--ink-rgb), 0.5);
+  flex-basis: 100%;
+}
+.pt-next-name { font-family: var(--font-display); font-size: 30px; font-weight: 700; color: var(--text-strong); }
+.pt-next-time { font-size: 15px; color: rgba(var(--ink-rgb), 0.7); }
+
+.pt-list { display: flex; flex-direction: column; }
+.pt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 4px;
+  border-bottom: 1px dashed var(--line);
+}
+.pt-row:last-child { border-bottom: none; }
+.pt-row-name { font-family: var(--font-body); font-size: 14.5px; color: var(--ink); }
+.pt-row-time { font-family: var(--font-display); font-size: 17px; color: var(--text-strong); }
+.pt-row.is-next { background: rgba(184, 134, 46, 0.1); border-radius: 8px; padding-left: 10px; padding-right: 10px; }
+.pt-row.is-next .pt-row-name { font-weight: 700; color: var(--gold); }
+
+.pt-qibla {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.pt-qibla-label { font-size: 13.5px; color: rgba(var(--ink-rgb), 0.6); }
+.pt-qibla-deg { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--gold); }
+.pt-qibla-sub { font-size: 12.5px; color: rgba(var(--ink-rgb), 0.5); }
+
+.pt-note {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: rgba(var(--ink-rgb), 0.55);
+  margin: 18px 0 0;
+}
+
+@media (max-width: 640px) {
+  .pt-card { padding: 20px; }
+  .pt-next-name { font-size: 24px; }
 }

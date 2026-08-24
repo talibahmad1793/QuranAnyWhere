@@ -313,6 +313,81 @@ const SURAH_META = [
   { ar: "الناس", type: "Meccan", ayahs: 6, juz: 30 },
 ];
 
+/* =============================================================================
+   QuranAW — recitation audio. Streams from cdn.islamic.network (the CDN
+   behind alquran.cloud) - free, no API key, CORS-open. Reciter: Mishary
+   Rashid Alafasy (ar.alafasy), a widely-used default edition on that CDN.
+   Only one clip plays at a time; clicking the active Play button again
+   pauses it, matching normal media-player expectations.
+   ========================================================================== */
+const QAW_RECITER_EDITION = "ar.alafasy";
+const QAW_RECITER_BITRATE = 128;
+let qawAudioEl = null;
+let qawAudioActiveBtn = null;
+
+// Converts (surah, ayah) into the Quran-wide ayah number (1-6236) the CDN
+// indexes by, using this project's own verified per-surah ayah counts.
+function qawGlobalAyahNumber(s, a) {
+  let total = a;
+  for (let i = 1; i < s; i++) total += SURAH_META[i].ayahs;
+  return total;
+}
+
+function qawAyahAudioUrl(s, a) {
+  return `https://cdn.islamic.network/quran/audio/${QAW_RECITER_BITRATE}/${QAW_RECITER_EDITION}/${qawGlobalAyahNumber(s, a)}.mp3`;
+}
+
+function qawSurahAudioUrl(s) {
+  return `https://cdn.islamic.network/quran/audio-surah/${QAW_RECITER_BITRATE}/${QAW_RECITER_EDITION}/${s}.mp3`;
+}
+
+function qawStopAudio() {
+  if (qawAudioEl) {
+    qawAudioEl.pause();
+    qawAudioEl.currentTime = 0;
+  }
+  if (qawAudioActiveBtn) {
+    qawAudioActiveBtn.textContent = qawAudioActiveBtn.dataset.playLabel || "Play";
+    qawAudioActiveBtn = null;
+  }
+}
+
+// Plays a recitation URL through a single shared <audio> element, updating
+// `btn`'s label to reflect state (Loading.../Pause/Play). Clicking the same
+// button again pauses; clicking a different Play button stops whatever was
+// playing first, so only one clip ever plays at once.
+function qawPlayAudioUrl(url, btn, label) {
+  if (qawAudioActiveBtn === btn) {
+    qawStopAudio();
+    return;
+  }
+  qawStopAudio();
+  if (!qawAudioEl) qawAudioEl = new Audio();
+  qawAudioEl.src = url;
+  btn.dataset.playLabel = label;
+  qawAudioActiveBtn = btn;
+  btn.textContent = "Loading\u2026";
+
+  qawAudioEl.play().then(
+    () => {
+      if (qawAudioActiveBtn === btn) btn.textContent = "Pause";
+    },
+    () => {
+      btn.textContent = "Couldn't play audio";
+      if (qawAudioActiveBtn === btn) qawAudioActiveBtn = null;
+      setTimeout(() => {
+        if (btn.textContent === "Couldn't play audio") btn.textContent = label;
+      }, 2000);
+    }
+  );
+  qawAudioEl.onended = () => {
+    if (qawAudioActiveBtn === btn) {
+      btn.textContent = label;
+      qawAudioActiveBtn = null;
+    }
+  };
+}
+
 
 const app = document.getElementById("app");
 
@@ -601,6 +676,79 @@ function toggleAyahFavorite(s, a, meta) {
   return true;
 }
 
+// --- Favorite dua - same store, "dua:" id prefix, kind:"dua". Only the
+// index + a display snapshot is kept; renderFavorites re-fetches duas.json
+// for the live text where possible and falls back to the snapshot.
+function duaFavoriteId(i) {
+  return `dua:${i}`;
+}
+
+function isDuaFavorited(i) {
+  const id = duaFavoriteId(i);
+  return getFavorites().some((f) => f.id === id);
+}
+
+function toggleDuaFavorite(i, meta) {
+  const id = duaFavoriteId(i);
+  const list = getFavorites();
+  const idx = list.findIndex((f) => f.id === id);
+  if (idx >= 0) {
+    list.splice(idx, 1);
+    saveFavorites(list);
+    updateFavoritesBadge();
+    return false;
+  }
+  list.unshift(Object.assign({ id, kind: "dua", i, savedAt: Date.now() }, meta));
+  saveFavorites(list);
+  updateFavoritesBadge();
+  return true;
+}
+
+// --- Tasbeeh counters: a simple per-dua lifetime tally, kept locally. ---
+const QAW_TASBEEH_KEY = "qaw:tasbeeh";
+
+function qawGetTasbeehCounts() {
+  try {
+    return JSON.parse(localStorage.getItem(QAW_TASBEEH_KEY) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function qawIncrementTasbeeh(i) {
+  const counts = qawGetTasbeehCounts();
+  counts[i] = (counts[i] || 0) + 1;
+  try {
+    localStorage.setItem(QAW_TASBEEH_KEY, JSON.stringify(counts));
+  } catch (e) {
+    /* storage unavailable */
+  }
+  return counts[i];
+}
+
+// Best-effort Hinglish "when to say this" tag derived from a dua's title,
+// since duas.json doesn't carry a separate timing field. Falls back to a
+// generic label rather than guessing wrong.
+function qawDuaTiming(title) {
+  const t = title.toLowerCase();
+  if (t.includes("sleep")) return "Sone se pehle";
+  if (t.includes("waking") || t.includes("wake")) return "Jagne ke baad";
+  if (t.includes("entering the toilet")) return "Toilet jaate waqt";
+  if (t.includes("leaving the toilet")) return "Toilet se nikalte waqt";
+  if (t.includes("before & after meals") || t.includes("before and after meals")) return "Khane se pehle/baad";
+  if (t.includes("before eating")) return "Khane se pehle";
+  if (t.includes("after eating")) return "Khane ke baad";
+  if (t.includes("entering & leaving home") || t.includes("entering and leaving home")) return "Ghar aate/jaate waqt";
+  if (t.includes("entering home")) return "Ghar mein aate waqt";
+  if (t.includes("travel")) return "Safar ke waqt";
+  if (t.includes("hearing someone sneeze")) return "Kisi ko chheenkte sunkar";
+  if (t.includes("sneezer")) return "Chheenkne wale ka jawab";
+  if (t.includes("sneez")) return "Chheenk aane par";
+  if (t.includes("adhaan") || t.includes("azaan")) return "Azaan ke baad";
+  if (t.includes("breaking fast") || t.includes("iftar")) return "Iftar ke waqt";
+  return "Har waqt";
+}
+
 //replace code 
 /* =============================================================================
    QuranAW — new home page  (v2 — BASE_PATH aware, fully namespaced)
@@ -723,8 +871,8 @@ async function renderHome() {
 
   const playBtn = el("button", { class: "home-btn home-btn-ghost", type: "button" }, "Play recitation");
   playBtn.addEventListener("click", () => {
-    playBtn.textContent = "Audio coming soon";
-    setTimeout(() => (playBtn.textContent = "Play recitation"), 1800);
+    const surahNum = qProgress && qProgress.s ? qProgress.s : 1;
+    qawPlayAudioUrl(qawSurahAudioUrl(surahNum), playBtn, "Play recitation");
   });
 
   resumeChildren.push(
@@ -786,7 +934,7 @@ async function renderHome() {
     { href: `${BASE_PATH}/quran-text/1`, label: "Read Qur'an", sub: "Juz by juz ya surah — apni marzi se", tint: "is-emerald" },
     { href: `${BASE_PATH}/hadith`, label: "Hadith", sub: "Bukhari, Muslim aur more", tint: "is-gold" },
     { href: `${BASE_PATH}/duas`, label: "Dua & Azkar", sub: "Roz ke duas, tasbeeh counter", tint: "is-sage" },
-    { href: `${BASE_PATH}/`, label: "Prayer times", sub: "Finding your location\u2026", tint: "is-clay", subId: "qawPrayerTileSub" },
+    { href: `${BASE_PATH}/prayer-times`, label: "Prayer times", sub: "Finding your location\u2026", tint: "is-clay", subId: "qawPrayerTileSub" },
   ];
   main.appendChild(
     el(
@@ -1363,8 +1511,7 @@ async function renderQuranText(juzNumber, scrollTarget) {
 
     const playBtn = el("button", { class: "btn btn-ghost qr-action", type: "button" }, "Play");
     playBtn.addEventListener("click", () => {
-      playBtn.textContent = "Audio coming soon";
-      setTimeout(() => (playBtn.textContent = "Play"), 1800);
+      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playBtn, "Play");
     });
 
     return el("div", { class: "qr-verse-actions" }, [saveBtn, shareBtn, playBtn]);
@@ -1461,20 +1608,20 @@ async function renderQuranText(juzNumber, scrollTarget) {
 
 async function renderDuas(scrollTarget) {
   setMeta({
-    title: "Daily Dua & Dhikr",
-    description: "Essential duas and adhkar for every moment of your day — read online, free.",
+    title: "Dua & Azkar",
+    description: "Roz ke duas — Arabic, transliteration aur Hinglish matlab ke saath.",
   });
   app.innerHTML = "";
-  const crumb = el("p", { class: "crumb" }, [el("a", { href: `${BASE_PATH}/` }, "Library"), " / Daily Dua & Dhikr"]);
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: `${BASE_PATH}/` }, "Library"), " / Dua & Azkar"]);
   const heading = el("div", {}, [
-    el("h1", { class: "page-title" }, "Daily Dua & Dhikr"),
-    el("p", { class: "duas-subtitle" }, "Essential duas and dhikr for every moment of your day"),
+    el("h1", { class: "page-title" }, "Dua & Azkar"),
+    el("p", { class: "duas-subtitle" }, "Roz ke duas \u2014 Arabic, transliteration aur Hinglish matlab ke saath."),
   ]);
 
-  const versesWrap = el("div", { class: "verses-wrap" });
-  renderLoading(versesWrap);
+  const grid = el("div", { class: "duas-grid" });
+  renderLoading(grid);
 
-  const wrap = el("div", { class: "container text-container" }, [crumb, heading, versesWrap]);
+  const wrap = el("div", { class: "container text-container" }, [crumb, heading, grid]);
   app.appendChild(el("main", {}, wrap));
 
   function duaUrl(i) {
@@ -1489,20 +1636,10 @@ async function renderDuas(scrollTarget) {
     const res = await fetch(`${RAW_ROOT}/${DUAS_JSON_PATH}`);
     if (!res.ok) throw new Error(`Couldn't load duas.json (${res.status})`);
     const duas = await res.json();
+    const tasbeehCounts = qawGetTasbeehCounts();
 
-    versesWrap.innerHTML = "";
+    grid.innerHTML = "";
     duas.forEach((d, i) => {
-      const copyBtn = el("button", { class: "share-link", type: "button" }, "Copy");
-      copyBtn.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(duaShareText(d, i));
-          copyBtn.textContent = "Copied!";
-        } catch (err) {
-          copyBtn.textContent = "Couldn't copy";
-        }
-        setTimeout(() => (copyBtn.textContent = "Copy"), 1800);
-      });
-
       const socialTargets = [
         { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(duaShareText(d, i))}` },
         { label: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(duaUrl(i))}&text=${encodeURIComponent(d.title)}` },
@@ -1516,8 +1653,14 @@ async function renderDuas(scrollTarget) {
       );
       social.style.display = "none";
 
-      const shareBtn = el("button", { class: "share-link", type: "button" }, "Share");
-      shareBtn.addEventListener("click", async () => {
+      const shareIconBtn = el(
+        "button",
+        { class: "dua-share-icon", type: "button", "aria-label": "Share this dua" },
+        svgIcon(
+          '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M14 6.5a2.25 2.25 0 1 0-2.1-3.05L7.4 6.3a2.25 2.25 0 1 0 0 3.9l4.5 2.85a2.25 2.25 0 1 0 .7-1.35L8.1 8.85a2.28 2.28 0 0 0 0-1.2L12.6 4.8c.34.42.83.7 1.4.7Z" fill="currentColor"/></svg>'
+        )
+      );
+      shareIconBtn.addEventListener("click", async () => {
         if (navigator.share) {
           try {
             await navigator.share({ title: d.title, text: duaShareText(d, i), url: duaUrl(i) });
@@ -1529,21 +1672,45 @@ async function renderDuas(scrollTarget) {
         }
       });
 
-      const shareRow = el("div", { class: "share-row" }, [shareBtn, el("span", { class: "share-sep" }, "|"), copyBtn]);
+      const saved = isDuaFavorited(i);
+      const saveBtn = el(
+        "button",
+        { class: `btn btn-ghost dua-action${saved ? " is-active" : ""}`, type: "button" },
+        saved ? "Saved" : "Save"
+      );
+      saveBtn.addEventListener("click", () => {
+        const now = toggleDuaFavorite(i, { title: d.title, arabic: d.arabic, transliteration: d.transliteration, translation: d.translation, reference: d.reference });
+        saveBtn.textContent = now ? "Saved" : "Save";
+        saveBtn.classList.toggle("is-active", now);
+      });
+
+      const tasbeehBtn = el(
+        "button",
+        { class: "btn btn-ghost dua-action", type: "button" },
+        `Tasbeeh ${tasbeehCounts[i] || 0}`
+      );
+      tasbeehBtn.addEventListener("click", () => {
+        const count = qawIncrementTasbeeh(i);
+        tasbeehBtn.textContent = `Tasbeeh ${count}`;
+      });
 
       const card = el("div", { class: "dua-card", id: `dua-${i}` }, [
-        el("h3", { class: "dua-title" }, d.title),
+        el("div", { class: "dua-card-head" }, [
+          el("h3", { class: "dua-title" }, d.title),
+          el("span", { class: "dua-timing" }, qawDuaTiming(d.title)),
+          shareIconBtn,
+        ]),
         el("div", { class: "verse-arabic dua-arabic" }, d.arabic),
         el("p", { class: "verse-translit" }, d.transliteration),
         el("p", { class: "verse-urdu dua-translation" }, `\u201c${d.translation}\u201d`),
         el("p", { class: "dua-reference" }, d.reference),
-        shareRow,
+        el("div", { class: "dua-actions" }, [saveBtn, tasbeehBtn]),
         social,
       ]);
       if (d.note) {
         card.appendChild(el("p", { class: "dua-note" }, `\u2139 ${d.note}`));
       }
-      versesWrap.appendChild(card);
+      grid.appendChild(card);
     });
 
     if (scrollTarget !== undefined && scrollTarget !== null) {
@@ -1555,8 +1722,8 @@ async function renderDuas(scrollTarget) {
       }
     }
   } catch (e) {
-    versesWrap.innerHTML = "";
-    renderError(versesWrap, e.message);
+    grid.innerHTML = "";
+    renderError(grid, e.message);
   }
 }
 
@@ -2120,9 +2287,48 @@ async function renderFavorites() {
     return card;
   }
 
+  function buildDuaFavoriteCard(f, d, i) {
+    const saveBtn = el("button", { class: "btn btn-ghost dua-action is-active", type: "button" }, "Saved");
+    saveBtn.addEventListener("click", () => {
+      toggleDuaFavorite(i, {});
+      card.remove();
+      if (listWrap.children.length === 0) renderFavorites();
+    });
+    const shareBtn = el("button", { class: "btn btn-ghost dua-action", type: "button" }, "Share");
+    shareBtn.addEventListener("click", async () => {
+      const text = [d.title, d.arabic, d.transliteration, d.translation, d.reference].filter(Boolean).join("\n");
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: d.title, text });
+        } catch (e) {
+          /* cancelled */
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(text);
+          shareBtn.textContent = "Copied!";
+        } catch (e) {
+          shareBtn.textContent = "Couldn't copy";
+        }
+        setTimeout(() => (shareBtn.textContent = "Share"), 1800);
+      }
+    });
+
+    const card = el("div", { class: "dua-card" }, [
+      el("h3", { class: "dua-title" }, d.title),
+      el("div", { class: "verse-arabic dua-arabic" }, d.arabic),
+      d.transliteration ? el("p", { class: "verse-translit" }, d.transliteration) : null,
+      d.translation ? el("p", { class: "verse-urdu dua-translation" }, `\u201c${d.translation}\u201d`) : null,
+      d.reference ? el("p", { class: "dua-reference" }, d.reference) : null,
+      el("div", { class: "dua-actions" }, [saveBtn, shareBtn]),
+    ].filter(Boolean));
+    return card;
+  }
+
   try {
-    const hadithFavs = favorites.filter((f) => f.kind !== "ayah");
+    const hadithFavs = favorites.filter((f) => f.kind !== "ayah" && f.kind !== "dua");
     const ayahFavs = favorites.filter((f) => f.kind === "ayah");
+    const duaFavs = favorites.filter((f) => f.kind === "dua");
 
     const uniqueSlugs = [...new Set(hadithFavs.map((f) => f.bookSlug))];
     const loadedBooks = {};
@@ -2148,6 +2354,16 @@ async function renderFavorites() {
       })
     );
 
+    let allDuas = null;
+    if (duaFavs.length) {
+      try {
+        const res = await fetch(`${RAW_ROOT}/${DUAS_JSON_PATH}`);
+        allDuas = res.ok ? await res.json() : null;
+      } catch (e) {
+        allDuas = null;
+      }
+    }
+
     listWrap.innerHTML = "";
     let shown = 0;
 
@@ -2160,6 +2376,15 @@ async function renderFavorites() {
         const v = rec || (f.ar ? { ar: f.ar, t: f.t, u: f.u } : null);
         if (!v) return;
         listWrap.appendChild(buildAyahFavoriteCard(f, v));
+        shown++;
+        return;
+      }
+
+      if (f.kind === "dua") {
+        const live = allDuas && allDuas[f.i] ? allDuas[f.i] : null;
+        const d = live || (f.title ? { title: f.title, arabic: f.arabic, transliteration: f.transliteration, translation: f.translation, reference: f.reference } : null);
+        if (!d) return;
+        listWrap.appendChild(buildDuaFavoriteCard(f, d, f.i));
         shown++;
         return;
       }
@@ -2338,6 +2563,8 @@ function route() {
 
   if (parts[0] === "search") {
     renderSearch(parts[1] ? decodeURIComponent(parts[1]) : "");
+  } else if (parts[0] === "prayer-times") {
+    renderPrayerTimes();
   } else if (parts[0] === "favorites") {
     renderFavorites();
   } else if (parts[0] === "hadith-about" && parts[1] && parts[2]) {
@@ -2647,13 +2874,39 @@ async function qawLoadPrayerTimes(lat, lon) {
   qawRenderPrayerUI(timings, lat, lon);
 }
 
-async function qawTryIpFallback() {
+// Resolves the visitor's coordinates: GPS first, falling back to IP-based
+// geolocation. Rejects only if both fail - callers decide how to degrade.
+function qawResolveLocation() {
+  return new Promise((resolve, reject) => {
+    const ipFallback = () => {
+      fetch("https://ipapi.co/json/")
+        .then((res) => {
+          if (!res.ok) throw new Error("IP lookup failed");
+          return res.json();
+        })
+        .then((json) => {
+          if (!json.latitude || !json.longitude) throw new Error("No coordinates from IP lookup");
+          resolve({ lat: json.latitude, lon: json.longitude, city: json.city, region: json.region, country: json.country_name, source: "ip" });
+        })
+        .catch(reject);
+    };
+
+    if (!navigator.geolocation) {
+      ipFallback();
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, source: "gps" }),
+      ipFallback,
+      { timeout: 8000, maximumAge: 3600000 }
+    );
+  });
+}
+
+async function qawLoadPrayerTimesForChip() {
   try {
-    const res = await fetch("https://ipapi.co/json/");
-    if (!res.ok) throw new Error("IP lookup failed");
-    const json = await res.json();
-    if (!json.latitude || !json.longitude) throw new Error("No coordinates from IP lookup");
-    await qawLoadPrayerTimes(json.latitude, json.longitude);
+    const loc = await qawResolveLocation();
+    await qawLoadPrayerTimes(loc.lat, loc.lon);
   } catch (e) {
     qawSetPrayerLabel("Prayer times unavailable");
     qawSetPrayerTileSub("Enable location to see namaz times");
@@ -2663,24 +2916,108 @@ async function qawTryIpFallback() {
 function qawInitPrayerTimes() {
   if (!document.getElementById("qawPrayerLabel")) return; // shell not present on this page
   qawSetPrayerLabel("Finding your location\u2026");
-
-  if (!navigator.geolocation) {
-    qawTryIpFallback();
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      qawLoadPrayerTimes(pos.coords.latitude, pos.coords.longitude).catch(qawTryIpFallback);
-    },
-    () => {
-      qawTryIpFallback();
-    },
-    { timeout: 8000, maximumAge: 3600000 }
-  );
+  qawLoadPrayerTimesForChip();
 }
 
-/* --- One-time init on first load ----------------------------------------- */
+/* --- Full Prayer Times page ------------------------------------------------ */
+const QAW_PRAYER_DISPLAY_ORDER = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"];
+
+async function qawReverseGeocode(lat, lon) {
+  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+  if (!res.ok) throw new Error("Reverse geocoding failed");
+  const json = await res.json();
+  const a = json.address || {};
+  const place = a.city || a.town || a.village || a.county || a.state_district;
+  const region = a.state || a.country;
+  return [place, region].filter(Boolean).join(", ") || json.display_name || null;
+}
+
+async function renderPrayerTimes() {
+  setMeta({
+    title: "Prayer Times",
+    description: "Namaz timings and Qibla direction for your current location.",
+  });
+  app.innerHTML = "";
+  const crumb = el("p", { class: "crumb" }, [el("a", { href: `${BASE_PATH}/` }, "Library"), " / Prayer Times"]);
+
+  const locationLine = el("p", { class: "pt-location" }, "Finding your location\u2026");
+  const card = el("div", { class: "pt-card" });
+  renderLoading(card);
+
+  const wrap = el("div", { class: "container text-container" }, [
+    crumb,
+    el("h1", { class: "page-title" }, "Prayer Times"),
+    locationLine,
+    card,
+  ]);
+  app.appendChild(el("main", {}, wrap));
+
+  try {
+    const loc = await qawResolveLocation();
+    const timings = qawGetCachedTimings(loc.lat, loc.lon) || (await qawFetchTimings(loc.lat, loc.lon));
+    qawSetCachedTimings(loc.lat, loc.lon, timings);
+    qawRenderPrayerUI(timings, loc.lat, loc.lon); // keeps the topbar chip / home tile in sync too
+
+    let placeName = [loc.city, loc.region].filter(Boolean).join(", ");
+    if (!placeName) {
+      try {
+        placeName = await qawReverseGeocode(loc.lat, loc.lon);
+      } catch (e) {
+        placeName = null;
+      }
+    }
+    locationLine.textContent = placeName
+      ? `${placeName} \u00b7 ${loc.lat.toFixed(2)}\u00b0, ${loc.lon.toFixed(2)}\u00b0`
+      : `${loc.lat.toFixed(2)}\u00b0, ${loc.lon.toFixed(2)}\u00b0`;
+
+    const next = qawNextPrayer(timings);
+    const qibla = qawQiblaBearing(loc.lat, loc.lon);
+
+    card.innerHTML = "";
+    card.appendChild(
+      el("div", { class: "pt-next" }, [
+        el("span", { class: "pt-next-kicker" }, "Next prayer"),
+        el("span", { class: "pt-next-name" }, next.name),
+        el("span", { class: "pt-next-time" }, `${qawFormatTime12(next.time)} \u00b7 in ${qawFormatCountdown(next.diffMin)}`),
+      ])
+    );
+
+    const list = el("div", { class: "pt-list" });
+    QAW_PRAYER_DISPLAY_ORDER.forEach((name) => {
+      if (!timings[name]) return;
+      const isNext = name === next.name;
+      list.appendChild(
+        el("div", { class: `pt-row${isNext ? " is-next" : ""}` }, [
+          el("span", { class: "pt-row-name" }, name),
+          el("span", { class: "pt-row-time" }, qawFormatTime12(timings[name])),
+        ])
+      );
+    });
+    card.appendChild(list);
+
+    card.appendChild(
+      el("div", { class: "pt-qibla" }, [
+        el("span", { class: "pt-qibla-label" }, "Qibla direction"),
+        el("span", { class: "pt-qibla-deg" }, `${qibla}\u00b0`),
+        el("span", { class: "pt-qibla-sub" }, "from true North"),
+      ])
+    );
+
+    card.appendChild(
+      el(
+        "p",
+        { class: "pt-note" },
+        "Calculation method: University of Islamic Sciences, Karachi. Times are approximate \u2014 please confirm with your local masjid for congregational (jama'at) timings."
+      )
+    );
+  } catch (e) {
+    locationLine.textContent = "Couldn't determine your location.";
+    card.innerHTML = "";
+    renderError(card, "Enable location access in your browser and reload this page to see prayer times.");
+  }
+}
+
+
 window.addEventListener("DOMContentLoaded", () => {
   qawInitThemeToggle();
   qawInitTopSearch();
