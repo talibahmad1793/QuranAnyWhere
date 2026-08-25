@@ -320,12 +320,19 @@ const SURAH_META = [
    Rashid Alafasy (ar.alafasy), a widely-used default edition on that CDN.
    Only one clip plays at a time. Clicking the active button again pauses
    in place (resume continues from the same position, not the start).
+   A persistent "Now Playing" bar (fixed to the bottom of the viewport)
+   mirrors whatever is playing, with its own play/pause, live progress bar,
+   and elapsed/total time - like any ordinary media player.
    ========================================================================== */
 const QAW_RECITER_EDITION = "ar.alafasy";
+const QAW_RECITER_NAME = "Mishary Rashid Alafasy";
 const QAW_RECITER_BITRATE = 128;
 let qawAudioEl = null;
 let qawAudioActiveBtn = null;
 let qawAudioActiveUrl = null;
+
+const QAW_ICON_PLAY = '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6 4.5v11l9-5.5-9-5.5Z"/></svg>';
+const QAW_ICON_PAUSE = '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><rect x="4" y="4" width="12" height="12" rx="2"/></svg>';
 
 // Converts (surah, ayah) into the Quran-wide ayah number (1-6236) the CDN
 // indexes by, using this project's own verified per-surah ayah counts.
@@ -343,6 +350,75 @@ function qawSurahAudioUrl(s) {
   return `https://cdn.islamic.network/quran/audio-surah/${QAW_RECITER_BITRATE}/${QAW_RECITER_EDITION}/${s}.mp3`;
 }
 
+function qawFormatClock(seconds) {
+  if (!isFinite(seconds) || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/* --- Now Playing bar: shows/hides/updates, but never owns playback state
+   itself - it just reflects whatever qawAudioEl is doing. */
+function qawShowNowPlayingBar(title, subtitle) {
+  const bar = document.getElementById("qawNowPlaying");
+  if (!bar) return;
+  const titleEl = document.getElementById("qawNowPlayingTitle");
+  const subEl = document.getElementById("qawNowPlayingSubtitle");
+  if (titleEl) titleEl.textContent = title;
+  if (subEl) subEl.textContent = subtitle;
+  bar.style.display = "flex";
+}
+
+function qawHideNowPlayingBar() {
+  const bar = document.getElementById("qawNowPlaying");
+  if (bar) bar.style.display = "none";
+}
+
+function qawSetNowPlayingIcon(isPlaying) {
+  const btn = document.getElementById("qawNowPlayingToggle");
+  if (!btn) return;
+  btn.innerHTML = isPlaying ? QAW_ICON_PAUSE : QAW_ICON_PLAY;
+  btn.setAttribute("aria-label", isPlaying ? "Pause" : "Play");
+}
+
+function qawUpdateNowPlayingProgress() {
+  if (!qawAudioEl) return;
+  const fill = document.getElementById("qawNowPlayingFill");
+  const time = document.getElementById("qawNowPlayingTime");
+  const cur = qawAudioEl.currentTime || 0;
+  const dur = qawAudioEl.duration || 0;
+  if (fill) fill.style.width = dur ? `${Math.min(100, (cur / dur) * 100)}%` : "0%";
+  if (time) time.textContent = `${qawFormatClock(cur)} / ${qawFormatClock(dur)}`;
+}
+
+// Wires the bar's own controls to whatever <audio> element exists at the
+// time this runs. Called once, right after qawAudioEl is first created.
+function qawWireNowPlayingBar() {
+  qawAudioEl.addEventListener("timeupdate", qawUpdateNowPlayingProgress);
+  qawAudioEl.addEventListener("loadedmetadata", qawUpdateNowPlayingProgress);
+  qawAudioEl.addEventListener("play", () => {
+    qawSetNowPlayingIcon(true);
+    if (qawAudioActiveBtn) qawAudioActiveBtn.textContent = "Pause";
+  });
+  qawAudioEl.addEventListener("pause", () => {
+    qawSetNowPlayingIcon(false);
+    if (qawAudioActiveBtn) qawAudioActiveBtn.textContent = "Resume";
+  });
+
+  const toggleBtn = document.getElementById("qawNowPlayingToggle");
+  const closeBtn = document.getElementById("qawNowPlayingClose");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      if (!qawAudioEl) return;
+      if (qawAudioEl.paused) qawAudioEl.play().catch(() => {});
+      else qawAudioEl.pause();
+    });
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => qawStopAudio());
+  }
+}
+
 function qawStopAudio() {
   if (qawAudioEl) {
     qawAudioEl.onended = null;
@@ -353,6 +429,7 @@ function qawStopAudio() {
   }
   qawAudioActiveBtn = null;
   qawAudioActiveUrl = null;
+  qawHideNowPlayingBar();
 }
 
 // Plays a recitation URL through a single shared <audio> element.
@@ -360,29 +437,33 @@ function qawStopAudio() {
 //   pause/resume in place (position is preserved).
 // - Clicking a different Play button (or a new track) stops whatever was
 //   playing first and starts the new one from the beginning.
+// - `nowPlaying`, if given, is {title, subtitle} shown in the persistent
+//   bottom Now Playing bar while this track plays.
 // - `onFinished`, if given, fires after the recitation ends naturally (not
 //   on manual pause/stop) - used to auto-advance a playlist.
-function qawPlayAudioUrl(url, btn, label, onFinished) {
+function qawPlayAudioUrl(url, btn, label, nowPlaying, onFinished) {
   const isSameTrack = qawAudioActiveBtn === btn && qawAudioActiveUrl === url && qawAudioEl;
   if (isSameTrack) {
     if (qawAudioEl.paused) {
-      qawAudioEl.play().then(() => {
-        if (qawAudioActiveBtn === btn) btn.textContent = "Pause";
-      }, () => {});
+      qawAudioEl.play().catch(() => {});
     } else {
       qawAudioEl.pause();
-      btn.textContent = "Resume";
     }
     return;
   }
 
   qawStopAudio();
-  if (!qawAudioEl) qawAudioEl = new Audio();
+  if (!qawAudioEl) {
+    qawAudioEl = new Audio();
+    qawWireNowPlayingBar();
+  }
   qawAudioEl.src = url;
   qawAudioActiveUrl = url;
   btn.dataset.playLabel = label;
   qawAudioActiveBtn = btn;
   btn.textContent = "Loading\u2026";
+
+  if (nowPlaying) qawShowNowPlayingBar(nowPlaying.title, nowPlaying.subtitle);
 
   qawAudioEl.play().then(
     () => {
@@ -394,6 +475,7 @@ function qawPlayAudioUrl(url, btn, label, onFinished) {
         qawAudioActiveBtn = null;
         qawAudioActiveUrl = null;
       }
+      qawHideNowPlayingBar();
       setTimeout(() => {
         if (btn.textContent === "Couldn't play audio") btn.textContent = label;
       }, 2000);
@@ -405,6 +487,7 @@ function qawPlayAudioUrl(url, btn, label, onFinished) {
     btn.textContent = label;
     qawAudioActiveBtn = null;
     qawAudioActiveUrl = null;
+    if (!onFinished) qawHideNowPlayingBar();
     if (onFinished) onFinished();
   };
 }
@@ -893,7 +976,11 @@ async function renderHome() {
   const playBtn = el("button", { class: "home-btn home-btn-ghost", type: "button" }, "Play recitation");
   playBtn.addEventListener("click", () => {
     const surahNum = qProgress && qProgress.s ? qProgress.s : 1;
-    qawPlayAudioUrl(qawSurahAudioUrl(surahNum), playBtn, "Play recitation");
+    const surahName = SURAH_NAMES[surahNum] || `Surah ${surahNum}`;
+    qawPlayAudioUrl(qawSurahAudioUrl(surahNum), playBtn, "Play recitation", {
+      title: surahName,
+      subtitle: `${QAW_RECITER_NAME} \u00b7 full surah`,
+    });
   });
 
   resumeChildren.push(
@@ -1547,7 +1634,10 @@ async function renderQuranText(juzNumber, scrollTarget) {
 
     const playBtn = el("button", { class: "btn btn-ghost qr-action", type: "button" }, "Play");
     playBtn.addEventListener("click", () => {
-      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playBtn, "Play");
+      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playBtn, "Play", {
+        title: `${surahName}, ayah ${v.a}`,
+        subtitle: `${QAW_RECITER_NAME} \u00b7 verse-by-verse`,
+      });
     });
 
     return el("div", { class: "qr-verse-actions" }, [saveBtn, shareBtn, playBtn]);
@@ -2825,6 +2915,109 @@ function qawQiblaBearing(lat, lon) {
   return Math.round((toDeg(Math.atan2(y, x)) + 360) % 360);
 }
 
+/* --- Live Qibla compass -----------------------------------------------
+   On a phone with a compass sensor, rotates a needle so it points at the
+   Kaaba as you physically turn the device - point the arrow straight up
+   to face Qibla. iOS requires an explicit user-gesture permission prompt
+   (DeviceOrientationEvent.requestPermission); Android/desktop Chrome does
+   not. Devices with no compass sensor at all (most laptops) fall back to
+   a static needle showing the bearing from true North instead of lying
+   about live orientation. */
+function qawNeedsOrientationPermission() {
+  return typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function";
+}
+
+// Starts listening for compass heading updates. Prefers the "absolute"
+// event (true compass heading) where available; falls back to the plain
+// event only if the absolute one never fires. Returns a cleanup function.
+function qawStartCompassListening(onHeading) {
+  let gotAbsolute = false;
+  function handle(e, isAbsoluteSource) {
+    if (e.alpha == null && e.webkitCompassHeading == null) return;
+    if (isAbsoluteSource) gotAbsolute = true;
+    if (!isAbsoluteSource && gotAbsolute) return; // an absolute source already answered - trust it over the plain one
+    const heading = e.webkitCompassHeading != null ? e.webkitCompassHeading : (360 - e.alpha) % 360;
+    onHeading(heading);
+  }
+  const onAbsolute = (e) => handle(e, true);
+  const onPlain = (e) => handle(e, false);
+  window.addEventListener("deviceorientationabsolute", onAbsolute);
+  window.addEventListener("deviceorientation", onPlain);
+  return () => {
+    window.removeEventListener("deviceorientationabsolute", onAbsolute);
+    window.removeEventListener("deviceorientation", onPlain);
+  };
+}
+
+function qawBuildQiblaCompass(qiblaBearing) {
+  const svg = svgIcon(
+    `<svg viewBox="0 0 100 100" width="150" height="150" class="pt-compass-svg">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+      <text x="50" y="14" text-anchor="middle" class="pt-compass-label">N</text>
+      <text x="88" y="53.5" text-anchor="middle" class="pt-compass-label">E</text>
+      <text x="50" y="93" text-anchor="middle" class="pt-compass-label">S</text>
+      <text x="12" y="53.5" text-anchor="middle" class="pt-compass-label">W</text>
+      <path class="pt-compass-needle" d="M50 12 L58 58 L50 46 L42 58 Z" fill="var(--gold)"
+            style="transform-origin:50px 50px; transition:transform 0.2s ease-out; transform:rotate(${qiblaBearing}deg);"/>
+    </svg>`
+  );
+  const needle = svg.querySelector(".pt-compass-needle");
+
+  const status = el("span", { class: "pt-compass-status" }, "Static \u2014 assumes you're facing North");
+  const enableBtn = el("button", { class: "btn btn-ghost pt-compass-btn", type: "button" }, "Enable live compass");
+
+  const wrap = el("div", { class: "pt-compass-wrap" }, [
+    el("div", { class: "pt-compass" }, [svg]),
+    el("div", { class: "pt-compass-info" }, [
+      el("span", { class: "pt-qibla-label" }, "Qibla direction"),
+      el("span", { class: "pt-qibla-deg" }, `${qiblaBearing}\u00b0`),
+      status,
+      enableBtn,
+    ]),
+  ]);
+
+  function goLive() {
+    enableBtn.style.display = "none";
+    status.textContent = "Point the arrow straight up to face Qibla";
+    let sawHeading = false;
+    const stop = qawStartCompassListening((heading) => {
+      sawHeading = true;
+      needle.style.transform = `rotate(${((qiblaBearing - heading + 360) % 360).toFixed(1)}deg)`;
+    });
+    // If no orientation events arrive at all (desktop, or a phone with no
+    // magnetometer), quietly fall back rather than leaving a dead promise.
+    setTimeout(() => {
+      if (!sawHeading) {
+        stop();
+        status.textContent = "No compass sensor detected \u2014 showing fixed direction from true North";
+      }
+    }, 2500);
+  }
+
+  if (!("DeviceOrientationEvent" in window)) {
+    status.textContent = "Live compass needs a phone with a compass sensor";
+    enableBtn.style.display = "none";
+  } else if (qawNeedsOrientationPermission()) {
+    // iOS: must be triggered by a real user tap, cannot start automatically.
+    enableBtn.addEventListener("click", () => {
+      DeviceOrientationEvent.requestPermission()
+        .then((result) => {
+          if (result === "granted") goLive();
+          else status.textContent = "Compass permission denied \u2014 showing fixed direction from true North";
+        })
+        .catch(() => {
+          status.textContent = "Couldn't access the compass on this device";
+        });
+    });
+  } else {
+    // Android / other browsers: no permission prompt needed, try directly.
+    enableBtn.style.display = "none";
+    goLive();
+  }
+
+  return wrap;
+}
+
 function qawFormatTime12(hhmm) {
   const [h, m] = hhmm.split(":").map(Number);
   const period = h >= 12 ? "pm" : "am";
@@ -3040,13 +3233,7 @@ async function renderPrayerTimes() {
     });
     card.appendChild(list);
 
-    card.appendChild(
-      el("div", { class: "pt-qibla" }, [
-        el("span", { class: "pt-qibla-label" }, "Qibla direction"),
-        el("span", { class: "pt-qibla-deg" }, `${qibla}\u00b0`),
-        el("span", { class: "pt-qibla-sub" }, "from true North"),
-      ])
-    );
+    card.appendChild(qawBuildQiblaCompass(qibla));
 
     card.appendChild(
       el(
@@ -3266,7 +3453,13 @@ async function renderQuranPlayer(surahNumber, opts) {
       }
       setPlayingRow(idx);
       const v = ayahs[idx];
-      qawPlayAudioUrl(qawAyahAudioUrl(v.s, v.a), playAllBtn, "\u25b6 Play Surah", () => playFrom(idx + 1));
+      qawPlayAudioUrl(
+        qawAyahAudioUrl(v.s, v.a),
+        playAllBtn,
+        "\u25b6 Play Surah",
+        { title: `${surahName}, ayah ${v.a}`, subtitle: `${QAW_RECITER_NAME} \u00b7 verse-by-verse` },
+        () => playFrom(idx + 1)
+      );
     }
 
     playAllBtn.addEventListener("click", () => {

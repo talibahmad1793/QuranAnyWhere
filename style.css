@@ -1944,17 +1944,35 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
 .pt-row.is-next { background: rgba(184, 134, 46, 0.1); border-radius: 8px; padding-left: 10px; padding-right: 10px; }
 .pt-row.is-next .pt-row-name { font-weight: 700; color: var(--gold); }
 
-.pt-qibla {
+.pt-qibla-label { font-size: 13.5px; color: rgba(var(--ink-rgb), 0.6); }
+.pt-qibla-deg { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--gold); }
+
+.pt-compass-wrap {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
   margin-top: 22px;
   padding-top: 20px;
   border-top: 1px solid var(--line);
 }
-.pt-qibla-label { font-size: 13.5px; color: rgba(var(--ink-rgb), 0.6); }
-.pt-qibla-deg { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--gold); }
-.pt-qibla-sub { font-size: 12.5px; color: rgba(var(--ink-rgb), 0.5); }
+.pt-compass { flex: none; }
+.pt-compass-svg { display: block; }
+.pt-compass-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 700;
+  fill: rgba(var(--ink-rgb), 0.45);
+}
+.pt-compass-info { display: flex; flex-direction: column; gap: 5px; }
+.pt-compass-status { font-size: 12.5px; color: rgba(var(--ink-rgb), 0.55); max-width: 240px; }
+.pt-compass-btn { align-self: flex-start; margin-top: 4px; }
+
+@media (max-width: 480px) {
+  .pt-compass-wrap { justify-content: center; text-align: center; }
+  .pt-compass-info { align-items: center; }
+  .pt-compass-btn { align-self: center; }
+}
 
 .pt-note {
   font-size: 12.5px;
@@ -2198,4 +2216,109 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
 @media (max-width: 640px) {
   .ic-hijri-day { font-size: 44px; }
   .ic-hijri-month { font-size: 19px; }
+}
+
+/* =============================================================================
+   QuranAW — persistent "Now Playing" bar (v1). Fixed to the bottom of the
+   viewport, mirrors whatever recitation audio is currently active anywhere
+   on the site (reader, home, or the Listen player). Namespaced .qaw-np-*.
+   ========================================================================== */
+.qaw-nowplaying {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: none;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 22px;
+  background: linear-gradient(180deg, var(--emerald), var(--emerald-deep));
+  color: #f1ead7;
+  box-shadow: 0 -8px 24px -8px rgba(18, 52, 48, 0.4);
+}
+
+.qaw-np-toggle {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--emerald-deep);
+  transition: background var(--fast);
+}
+.qaw-np-toggle:hover { background: var(--gold-soft); }
+
+.qaw-np-info {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  max-width: 220px;
+}
+.qaw-np-title {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f1ead7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qaw-np-subtitle {
+  font-size: 11.5px;
+  color: rgba(241, 234, 215, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qaw-np-progress {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.qaw-np-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(241, 234, 215, 0.18);
+  overflow: hidden;
+}
+.qaw-np-fill { height: 100%; width: 0%; background: var(--gold); transition: width 0.15s linear; }
+.qaw-np-time {
+  flex: none;
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+  color: rgba(241, 234, 215, 0.65);
+}
+
+.qaw-np-close {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(241, 234, 215, 0.55);
+  font-size: 19px;
+  line-height: 1;
+}
+.qaw-np-close:hover { color: #f1ead7; }
+
+@media (max-width: 640px) {
+  .qaw-nowplaying { padding: 10px 14px; gap: 10px; }
+  .qaw-np-info { min-width: 100px; max-width: 130px; }
+  .qaw-np-time { display: none; }
 }

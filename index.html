@@ -78,7 +78,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/QuranAnyWhere/style.css?v=22" />
+    <link rel="stylesheet" href="/QuranAnyWhere/style.css?v=23" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
       pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -284,6 +284,21 @@
       </div><!-- /.qaw-main -->
     </div><!-- /.qaw-shell -->
 
+    <div class="qaw-nowplaying" id="qawNowPlaying" style="display:none;" role="status">
+      <button type="button" class="qaw-np-toggle" id="qawNowPlayingToggle" aria-label="Pause">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><rect x="4" y="4" width="12" height="12" rx="2"/></svg>
+      </button>
+      <div class="qaw-np-info">
+        <span class="qaw-np-title" id="qawNowPlayingTitle">&mdash;</span>
+        <span class="qaw-np-subtitle" id="qawNowPlayingSubtitle">&mdash;</span>
+      </div>
+      <div class="qaw-np-progress">
+        <div class="qaw-np-bar"><div class="qaw-np-fill" id="qawNowPlayingFill"></div></div>
+        <span class="qaw-np-time" id="qawNowPlayingTime">0:00 / 0:00</span>
+      </div>
+      <button type="button" class="qaw-np-close" id="qawNowPlayingClose" aria-label="Stop">&times;</button>
+    </div>
+
     <div class="qaw-install-banner" id="qawInstallBanner" style="display:none;" role="status">
       <span class="qaw-install-icon" aria-hidden="true">
         <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 3v10m0 0 4-4m-4 4-4-4M4 15v1.5A1.5 1.5 0 0 0 5.5 18h9a1.5 1.5 0 0 0 1.5-1.5V15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -294,7 +309,7 @@
     </div>
 
     <script src="/QuranAnyWhere/config.js?v=12"></script>
-    <script src="/QuranAnyWhere/app.js?v=22"></script>
+    <script src="/QuranAnyWhere/app.js?v=23"></script>
     <script>
       document.querySelectorAll("[data-year]").forEach((el) => {
         el.textContent = new Date().getFullYear();
