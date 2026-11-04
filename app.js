@@ -181,6 +181,9 @@ const hadithBookCache = {}; // slug -> { sections, hadithsByBook: {bookNum: [{ar
 const SEARCH_INDEX_PATHS = {
   quran: "search-index/quran_index.json",
   hadith: "search-index/hadith_index.json",
+  // Extra hadith index files, kept separate so each stays under GitHub's
+  // 25MB web-upload limit. Add a new entry here for each new collection.
+  hadithExtra: ["search-index/hadith_index_hakim.json"],
 };
 let searchIndexCache = null; // { quran: [...], hadith: [...] }
 const HADITH_BOOK_NAMES = Object.fromEntries(HADITH_BOOKS.map((b) => [b.slug, b.name]));
@@ -2566,12 +2569,20 @@ async function renderFavorites() {
 
 async function loadSearchIndex() {
   if (searchIndexCache) return searchIndexCache;
-  const [qRes, hRes] = await Promise.all([
+  const extraPaths = SEARCH_INDEX_PATHS.hadithExtra || [];
+  const [qRes, hRes, ...extraRes] = await Promise.all([
     fetch(`${RAW_ROOT}/${SEARCH_INDEX_PATHS.quran}`),
     fetch(`${RAW_ROOT}/${SEARCH_INDEX_PATHS.hadith}`),
+    ...extraPaths.map((p) => fetch(`${RAW_ROOT}/${p}`)),
   ]);
   if (!qRes.ok || !hRes.ok) throw new Error("Couldn't load the search index");
-  const [quran, hadith] = await Promise.all([qRes.json(), hRes.json()]);
+  const [quran, hadithMain, ...extras] = await Promise.all([
+    qRes.json(),
+    hRes.json(),
+    // A missing extra file shouldn't break search for every other collection.
+    ...extraRes.map((r) => (r.ok ? r.json().catch(() => []) : [])),
+  ]);
+  const hadith = hadithMain.concat(...extras);
   searchIndexCache = { quran, hadith };
   return searchIndexCache;
 }
