@@ -148,6 +148,16 @@ const HADITH_BOOKS = [
       "Sunan ad-Darimi is a collection of hadith compiled by Imam Abu Muhammad Abd Allah ibn Abd al-Rahman ad-Darimi (rahimahullah). It contains roughly 3,400 hadith arranged across the major books of fiqh and belief.",
   },
   {
+    slug: "hakim",
+    name: "Al-Mustadrak 'ala as-Sahihayn",
+    arabic: "المستدرك على الصحيحين",
+    group: "major",
+    count: 8809,
+    status: "progress",
+    shortDesc:
+      "Al-Mustadrak 'ala as-Sahihayn is a collection of hadith compiled by Imam Abu Abdullah al-Hakim an-Naysaburi (d. 405 AH/1014 CE) (rahimahullah). In it he gathered narrations he judged to meet the conditions of al-Bukhari and Muslim but which they did not include in their Sahihs. It contains roughly 8,800 hadith in 48 books, with the gradings of Imam adh-Dhahabi from his Talkhis.",
+  },
+  {
     slug: "nawawi",
     name: "40 Hadith of an-Nawawi",
     arabic: "الأربعون النووية",
@@ -1873,6 +1883,8 @@ async function loadHadithBook(bookSlug) {
       arabic: h.ar,
       english: h.en,
       hinglish: h.hi || null,
+      grade: h.grade || null,
+      grader: h.grader || null,
     }));
   }
 
@@ -2278,6 +2290,7 @@ function buildHadithCard(h, ctx) {
     el("div", { class: "verse-arabic dua-arabic" }, h.arabic),
     el("p", { class: "verse-urdu dua-translation" }, h.english),
     ...(h.hinglish ? [el("p", { class: "verse-translit hadith-hinglish" }, h.hinglish)] : []),
+    ...(h.grade && h.grade !== "No Grade" ? [el("p", { class: "hadith-grade" }, `Grade: ${h.grade}${h.grader && h.grader !== "N/A" ? ` (${h.grader})` : ""}`)] : []),
     el("p", { class: "dua-reference" }, `${bookName} ${h.hadithnumber} \u00b7 Book ${sectionNum}, Hadith ${h.inBookNumber}`),
     shareRow,
     reportBtn,

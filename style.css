@@ -2322,3 +2322,11 @@ html[data-theme="night"] .hero::after { background: var(--paper); }
   .qaw-np-info { min-width: 100px; max-width: 130px; }
   .qaw-np-time { display: none; }
 }
+
+/* Hadith grading line (shown when a collection supplies grades, e.g. al-Hakim / adh-Dhahabi) */
+.hadith-grade {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-accent);
+}
