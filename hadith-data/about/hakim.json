@@ -1,0 +1,33 @@
+{
+  "title": "About Al-Mustadrak 'ala as-Sahihayn",
+  "content": [
+    {
+      "type": "paragraph",
+      "text": "Al-Mustadrak ʿala aṣ-Ṣaḥīḥayn (\"The Supplement to the Two Sahihs\") was compiled by Imām al-Ḥākim an-Naysābūrī (raḥimahullāh). His aim was to collect hadith that, in his judgement, met the conditions of al-Bukhārī and Muslim, or of one of them, but which neither had recorded in his Ṣaḥīḥ."
+    },
+    {
+      "type": "heading",
+      "text": "Author bio:"
+    },
+    {
+      "type": "paragraph",
+      "text": "Abū ʿAbdillāh Muḥammad ibn ʿAbdillāh al-Ḥākim an-Naysābūrī (321–405 AH / 933–1014 CE) was born in Naysābūr in Khurāsān. He travelled widely in search of hadith, served for a time as a judge (qāḍī), which earned him the title al-Ḥākim, and became one of the foremost hadith masters of his era. Among his other works is Maʿrifat ʿUlūm al-Ḥadīth, an early classic in the sciences of hadith."
+    },
+    {
+      "type": "heading",
+      "text": "Gradings:"
+    },
+    {
+      "type": "paragraph",
+      "text": "Al-Ḥākim was known to be lenient in authenticating narrations, so scholars read the Mustadrak alongside the Talkhīṣ of Imām adh-Dhahabī (d. 748 AH), who reviewed al-Ḥākim's judgements and agreed with, corrected, or remained silent on them. The grade shown under each hadith on this site is adh-Dhahabī's, unless another grader is named."
+    },
+    {
+      "type": "heading",
+      "text": "Translation:"
+    },
+    {
+      "type": "paragraph",
+      "text": "The English translation of many hadith in this collection is machine-assisted and is marked [AI]. The Hinglish (Roman Urdu) translation is still in progress; hadith without it currently show Arabic and English only."
+    }
+  ]
+}
